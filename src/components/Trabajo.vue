@@ -193,10 +193,6 @@
       </v-card-text>
     </v-card>
     
-
-  <br>
-  <br>
-
   <!--v-card style="padding: 20px">{{trabajo_encabezado}}</v-card>
   <v-card style="padding: 20px">{{clientes}}</v-card-->
 

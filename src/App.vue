@@ -17,6 +17,8 @@
       </v-list>
     </v-navigation-drawer>
 
+
+    <!-- APPVAR SIN LOGUEO-->
     <v-app-bar app
             color="yellow"
             prominent>
