@@ -7,10 +7,10 @@
       
       <v-list>
         <v-list-item
-          v-for="(item, index) in items"
+          v-for="(item, index) in DataStore.getOpcionesMenuPrincipal"
           :key="index"
           :value="index"
-          @click="irA(item.link)"
+          :to="item.link"
         >
           <v-list-item-title>{{ item.title }}</v-list-item-title>
         </v-list-item>
@@ -24,7 +24,7 @@
             prominent>
 
       <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer" v-if="DataStore.isLogged"></v-app-bar-nav-icon>
-      <v-toolbar-title>Application</v-toolbar-title>
+      <v-toolbar-title>Opciones</v-toolbar-title>
 
 
       <v-toolbar-title v-if="DataStore.firma_id>0">{{ DataStore.firmas[DataStore.firma_id-1].firma }}</v-toolbar-title>
@@ -36,13 +36,12 @@
 
     <v-main>
       <!-- Provides the application the proper gutter -->
-      <v-container fluid>
 
       <!-- If using vue-router -->
       <router-view></router-view>
-      </v-container>
     </v-main>
   </v-app>
+
 </template>
 
 <script>
@@ -75,19 +74,63 @@
       group: null,
       items: [
         {
+          title: 'Notificaciones',
+          link: '/centro-de-notificaciones',
+        },
+        {
           title: 'Trabajos',
           link: '/trabajos-list',
+        },
+        {
+          title: 'Cotizaciones',
+          link: '/cotizaciones-list',
+        },
+        {
+          title: 'Compras y Gastos',
+          link: '/compras-list',
+        },
+        {
+          title: 'Cheques',
+          link: '/cheques-list',
+        },
+        {
+          title: 'Facturas',
+          link: '/facturas-list',
+        },
+        {
+          title: 'Relaciones',
+          link: '/relaciones-list',
+        },
+        {
+          title: 'Recordatorios',
+          link: '/recordatorios-list',
+        },
+        {
+          title: 'Clientes',
+          link: '/clientes-list',
+        },
+        {
+          title: 'Proveedores',
+          link: '/proveedores-list',
         },
         {
           title: 'Cambiar Firma',
           link: '/',
         },
+        {
+          title: 'Cambiar Contraseña',
+          link: '/change-password',
+        },
+        {
+          title: 'Reportes',
+          link: '/reportes',
+        },
+        
       ],
     }),
 
     methods: {
       irapage: function(link) {
-						console.log(link);
 					},
       logout: function() {
         auth.deleteUserLogged();

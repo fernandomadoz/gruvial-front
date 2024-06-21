@@ -2,7 +2,7 @@
   <v-main>
     <v-container>
         <suspense timeout="0">
-            <TrabajosList/>
+            <CotizacionesList />
         </suspense>
     </v-container>
   </v-main>
@@ -12,5 +12,6 @@
 import { defineComponent } from 'vue';
 
 // Components
-import TrabajosList from '../components/TrabajosList.vue';
+import CotizacionesList from '../components/CotizacionesList.vue';
+
 </script>

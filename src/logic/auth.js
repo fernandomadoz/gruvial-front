@@ -12,8 +12,11 @@ import router from "@/router";
 // Con Login Laravel 9 (Sanctum)
 //const ENDPOINT_PATH = "http://localhost:1010/gruvial/back/public_html/back/";
 //const ENDPOINT_PATH_API = "http://localhost:1010/gruvial/back/public_html/back/api/";
-const ENDPOINT_PATH = "https://back.gruvial.com.ar/";
-const ENDPOINT_PATH_API = "https://back.gruvial.com.ar/api/";
+//const ENDPOINT_PATH = "https://back.gruvial.com.ar/";
+//const ENDPOINT_PATH_API = "https://back.gruvial.com.ar/api/";
+const ENDPOINT_PATH = import.meta.env.VITE_ENDPOINT_PATH
+const ENDPOINT_PATH_API = ENDPOINT_PATH+'api/'
+
 
 
 
@@ -27,14 +30,15 @@ export default {
         }
     },
 
-    setUserLogged(userLogged, logged, token, name, user_id) {
+    setUserLogged(userLogged, logged, token, name, user_id, rol_de_usuario_id) {
         const DataStore = useDataStore();
-        DataStore.setearUser(userLogged, true, token, user_id);
+        DataStore.setearUser(userLogged, true, token, user_id, rol_de_usuario_id);
         Cookies.set("userLogged", userLogged);
         Cookies.set("logged", logged);
         Cookies.set("token", token);
         Cookies.set("name", name);
         Cookies.set("user_id", user_id);
+        Cookies.set("rol_de_usuario_id", rol_de_usuario_id);
     },
     
     /*
@@ -104,10 +108,17 @@ export default {
         Cookies.remove('token');
         Cookies.remove('firma_id');
         Cookies.remove('user_id');
+        Cookies.remove('rol_de_usuario_id');
         DataStore.$reset();
         router.push("/login-view");
         
 
-    }
+    },
     
+    checkChangePassword() {
+        const DataStore = useDataStore();
+        const json = JSON.stringify({});
+
+        return axios.post(ENDPOINT_PATH_API + "check-change-password", json, {headers: DataStore.headersAxios[0]});
+    },
 };

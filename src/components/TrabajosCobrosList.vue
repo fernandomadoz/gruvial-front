@@ -22,12 +22,12 @@
                     <tr>
                         <th class="text-left">Accion</th>
                         <th class="text-left">id</th>
-                        <th class="text-left">Cobrado</th>
+                        <th class="text-left">Confirmado</th>
                         <th class="text-left">Fecha de cobro</th>
                         <th class="text-left">Persona que cobro</th>
                         <th class="text-left">Cuenta destino</th>
                         <th class="text-left">Tipo de cobro</th>
-                        <th class="text-left">Importe</th>
+                        <th class="text-left">Importe Total</th>
                         <th class="text-left">Deposito de cobro</th>
                         <th class="text-left">Cheque de cobro</th>
                         <th class="text-left">Deposito Destino</th>
@@ -38,6 +38,7 @@
                     <tr
                         v-for="item in listaCobros"
                         :key="item.id"
+                        v-bind:class="{ noconfirmado: item.confirmado == 'NO' || item.confirmado == '', confirmado: item.confirmado == 'SI'}"
                     >
                         <td>
                             <v-btn
@@ -56,12 +57,12 @@
                             ></v-btn>
                         </td>
                         <td>{{ (item.id) }}</td>
-                        <td>{{ (item.cobrado) }} </td>
+                        <td>{{ item.confirmado }} </td>
                         <td>{{ item.fecha_de_cobro }}</td>
                         <td>{{ item.persona_que_cobro_id > 0 ? item.persona_que_cobro.name : '' }}</td>
                         <td>{{ item.cuenta_de_destino_id > 0 ? item.cuenta_de_destino.detalle_select : '' }}</td>
                         <td>{{ (item.tipo_de_cobro.tipo_de_cobro) }}</td>
-                        <td>${{ (item.importe) }}</td>
+                        <td>${{ (item.importe_total) }}</td>
                         <td>{{ item.deposito_de_cobro_id > 0 ? item.deposito_de_cobro.deposito_detalle : '' }}</td>
                         <td>{{ item.cheque_id > 0 ? item.cheque.detalle_select : '' }}</td>
                         <td>{{ item.deposito_de_destino_id > 0 ? item.deposito_de_destino.deposito_detalle : '' }}</td>
@@ -76,8 +77,34 @@
 
         <v-card>
             <v-card-title>
-                <v-col cols="12" sm="11" md="11">
+                <v-col cols="12" sm="2" md="2">
                     <span class="text-h5">Cobro</span>
+                </v-col>
+                
+                <v-col cols="12" sm="4" md="4">
+                    <v-switch
+                        :disabled="deshabilitarEdicionCamposABMCobros"
+                        v-model="confirmado"
+                        color="success"
+                        label="Cobro recibido o verificado por Cristina"
+                        class="float-left"
+                    ></v-switch>
+                </v-col>
+                
+                <v-col cols="12" sm="4" md="4">
+                    <v-autocomplete
+                        v-model="cobro.tipo_de_cobro.id"
+                        :items="tipos_de_cobros"
+                        :disabled="deshabilitarEdicionCamposABMCobros"
+                        :rules="tipo_de_cobroRules"
+                        :hint="txtNotificarCambioTipoDeCobro"
+                        item-title="tipo_de_cobro"
+                        item-value="id"
+                        required
+                        dense
+                        filled
+                        label="Tipo de Cobro *"
+                    ></v-autocomplete> 
                 </v-col>
                 <v-col cols="1" sm="1" md="1">
                     <v-icon
@@ -96,10 +123,9 @@
                         v-model="validCobro"
                         lazy-validation
                     >
-                        <v-row>
                         
                             <!-- INICIO ENCABEZADO COBROS -->
-
+                            <v-row>
                                 <v-col cols="12" sm="6" md="4">
                                     <v-text-field
                                         :disabled="deshabilitarEdicionCamposABMCobros"
@@ -132,46 +158,16 @@
                                         item-title="detalle_select"
                                         item-value="id"
                                         label="Cuenta destino *"
+                                        required
                                         :rules="cuenta_de_destinoRules"
                                         return-object
-                                        required
                                     ></v-select>     
                                 </v-col>
-                                <v-col cols="12" sm="6" md="4">
-                                
-
-                                    <v-autocomplete
-                                        v-model="cobro.tipo_de_cobro.id"
-                                        :items="tipos_de_cobros"
-                                        :disabled="deshabilitarEdicionCamposABMCobros"
-                                        :rules="tipo_de_cobroRules"
-                                        :hint="txtNotificarCambioTipoDeCobro"
-                                        item-title="tipo_de_cobro"
-                                        item-value="id"
-                                        dense
-                                        required
-                                        filled
-                                        label="Tipo de Cobro *"
-                                    ></v-autocomplete> 
-                                </v-col>
+                            </v-row>
                             <!-- FIN ENCABEZADO COBROS -->
-                            
-                            <!-- INICIO EFECTIVO -->
-                                <v-col cols="12" sm="6" md="4">
-                                    <v-text-field
-                                        :disabled="deshabilitarEdicionCamposABMCobros"
-                                        v-model="importe"
-                                        :rules="importeRules"
-                                        :label="tipo_de_cobro_detalle"
-                                        type="number"
-                                        min="0"
-                                        prefix="$"
-                                        required
-                                    ></v-text-field>  
-                                </v-col>
-                            <!-- FIN EFECTIVO -->
-                            
+
                             <!-- INICIO DEPOSITO -->
+                            <!--v-row>
                                 <v-col cols="12" sm="6" md="4">
                                     <v-text-field
                                         v-show="tipo_de_cobro_id == 2"
@@ -182,22 +178,41 @@
                                         required
                                     ></v-text-field>  
                                 </v-col>
+                            </v-row-->
                             <!-- FIN DEPOSITO -->
 
+                            
                             <!-- INICIO CHEQUE -->
+                            <v-row v-show="tipo_de_cobro_id == 3 || tipo_de_cobro_id == 4">
+
+                                <!-- SEPARADOR -->
+                                <v-col cols="12" sm="12" md="12">
+                                    <v-list-subheader class="font-weight-black">DATOS DEL CHEQUE</v-list-subheader>
+                                    <v-divider class="border-opacity-100 my-0 py-0" :thickness="5"></v-divider>
+                                </v-col>
+
                                 <v-col cols="12" sm="6" md="4">
                                     <v-text-field
-                                        v-show="tipo_de_cobro_id == 3"
+                                        v-model="cobro.cheque.emisor"
+                                        :disabled="deshabilitarEdicionCamposABMCobros"
+                                        maxlength="100"
+                                        required
+                                        counter="100"
+                                        label="Emisor"
+                                    ></v-text-field>      
+                                </v-col>
+                                <v-col cols="12" sm="6" md="4">
+                                    <v-text-field
                                         v-model="cobro.cheque.numero_de_cheque"
                                         :disabled="deshabilitarEdicionCamposABMCobros"
+                                        required
                                         maxlength="30"
                                         counter="30"
-                                        label="Cheque"
+                                        label="Nro Cheque"
                                     ></v-text-field>      
                                 </v-col>
                                 <v-col cols="12" sm="6" md="4">
                                     <v-autocomplete
-                                        v-show="tipo_de_cobro_id == 3"
                                         v-model="cobro.cheque.banco.id"
                                         :items="bancos"
                                         :disabled="deshabilitarEdicionCamposABMCobros"
@@ -209,19 +224,17 @@
                                         required
                                     ></v-autocomplete>      
                                 </v-col>
-                                <v-col cols="12" sm="6" md="4">
+                                <!--v-col cols="12" sm="6" md="4">
                                     <v-text-field
-                                        v-show="tipo_de_cobro_id == 3"
                                         :disabled="deshabilitarEdicionCamposABMCobros"
                                         v-model="cobro.cheque.fecha_de_emision_f"
                                         label="Fecha de Emisión *"
                                         type="date"
                                         required
                                     ></v-text-field>  
-                                </v-col>
+                                </v-col-->
                                 <v-col cols="12" sm="6" md="4">
                                     <v-text-field
-                                        v-show="tipo_de_cobro_id == 3"
                                         :disabled="deshabilitarEdicionCamposABMCobros"
                                         v-model="cobro.cheque.fecha_inicio_de_cobro_f"
                                         label="Fecha de Inicio de Cobro *"
@@ -229,43 +242,19 @@
                                         required
                                     ></v-text-field>  
                                 </v-col>
+
                                 <v-col cols="12" sm="6" md="4">
                                     <v-text-field
-                                        v-show="tipo_de_cobro_id == 3"
                                         :disabled="deshabilitarEdicionCamposABMCobros"
                                         v-model="cobro.cheque.fecha_de_vencimiento_f"
                                         label="Fecha de Vencimiento *"
                                         type="date"
                                         required
+                                        readonly
                                     ></v-text-field>  
-                                </v-col>
-                                <v-col cols="12" sm="6" md="4">
-                                    <v-text-field
-                                        v-show="tipo_de_cobro_id == 3"
-                                        :disabled="deshabilitarEdicionCamposABMCobros"
-                                        v-model="cobro.cheque.fecha_de_cobro_f"
-                                        label="Fecha de Cobro *"
-                                        type="date"
-                                        required
-                                    ></v-text-field>  
-                                </v-col>
-                                <v-col cols="12" sm="6" md="4">
-                                    <v-autocomplete
-                                        v-show="tipo_de_cobro_id == 3"
-                                        v-model="cobro.cheque.persona_que_cobro.id"
-                                        :items="personas"
-                                        :disabled="deshabilitarEdicionCamposABMCobros"
-                                        item-title="detalle_select"
-                                        item-value="id"
-                                        dense
-                                        filled
-                                        label="Persona que cobro *"
-                                        required
-                                    ></v-autocomplete>      
                                 </v-col>
                                 <v-col cols="12" sm="6" md="4">
                                     <v-select
-                                        v-show="tipo_de_cobro_id == 3"
                                         v-model="cobro.cheque.causa_de_baja_de_cheque.id"
                                         :items="causas_de_bajas_de_cheques"
                                         :disabled="deshabilitarEdicionCamposABMCobros"
@@ -273,23 +262,175 @@
                                         item-value="id"
                                         label="Causa de No Cobro"
                                         return-object
+                                        clearable
                                     ></v-select>     
                                 </v-col>
+
+                            </v-row>
                             <!-- FIN CHEQUE -->
 
+                            
+
+                            <!-- INICIO IMPORTES -->                                
+                                
+                                <!-- SEPARADOR -->
+                                <v-col cols="12" sm="12" md="12">
+                                    <v-list-subheader class="font-weight-black">IMPORTES DEL COBRO</v-list-subheader>
+                                    <v-divider class="border-opacity-100 my-0 py-0" :thickness="5"></v-divider>
+                                </v-col>
+                                
+
+                                <v-row>
+                                    <v-col cols="12" sm="6" md="4">
+                                        <v-text-field
+                                            :disabled="deshabilitarEdicionCamposABMCobros"
+                                            v-model="importe_total"
+                                            :rules="importeRules"
+                                            :label="tipo_de_cobro_detalle"
+                                            type="number"
+                                            min="0"
+                                            required
+                                            prefix="$"
+                                        ></v-text-field>  
+                                    </v-col>
+
+                                    <v-col cols="12" sm="6" md="4">
+                                        <v-text-field
+                                            :disabled="deshabilitarEdicionCamposABMCobros"
+                                            v-model="importe_neto"
+                                            :rules="requeridoRules"
+                                            label="Neto *"
+                                            type="number"
+                                            min="0"
+                                            prefix="$"
+                                        ></v-text-field>  
+                                    </v-col>
+
+                                    
+                                    <v-col cols="12" sm="6" md="4">
+                                        <v-text-field
+                                            :disabled="deshabilitarEdicionCamposABMCobros"
+                                            v-model="importe_iva"
+                                            :rules="requeridoRules"
+                                            label="Iva *"
+                                            type="number"
+                                            min="0"
+                                            prefix="$"
+                                        ></v-text-field>  
+                                    </v-col>
+                                </v-row>
+
+                                <v-row>  
+                                    <v-col cols="12" sm="6" md="6">
+                                        <v-switch
+                                            v-model="otros_importes"
+                                            label="cargar retenciones"
+                                            color="success"
+                                        ></v-switch>
+                                        </v-col>
+                                </v-row>
+
+                                <v-row v-show="otros_importes">                                
+                                    <v-col cols="12" sm="6" md="4">
+                                        <v-text-field
+                                            :disabled="deshabilitarEdicionCamposABMCobros"
+                                            v-model="importe_no_grabado"
+                                            :rules="requeridoRules"
+                                            label="No grabado *"
+                                            type="number"
+                                            min="0"
+                                            prefix="$"
+                                        ></v-text-field>  
+                                    </v-col>
+
+                                    
+                                    <v-col cols="12" sm="6" md="4">
+                                        <v-text-field
+                                            :disabled="deshabilitarEdicionCamposABMCobros"
+                                            v-model="retencion_iibb"
+                                            :rules="requeridoRules"
+                                            label="Retención IIBB *"
+                                            type="number"
+                                            min="0"
+                                            prefix="$"
+                                        ></v-text-field>  
+                                    </v-col>
+
+                                    
+                                    <v-col cols="12" sm="6" md="4">
+                                        <v-text-field
+                                            :disabled="deshabilitarEdicionCamposABMCobros"
+                                            v-model="retencion_ganancias"
+                                            :rules="requeridoRules"
+                                            label="Retención Ganancias *"
+                                            type="number"
+                                            min="0"
+                                            prefix="$"
+                                        ></v-text-field>  
+                                    </v-col>
+
+                                    
+                                    <v-col cols="12" sm="6" md="4">
+                                        <v-text-field
+                                            :disabled="deshabilitarEdicionCamposABMCobros"
+                                            v-model="retencion_suss"
+                                            :rules="requeridoRules"
+                                            label="Retención SUSS *"
+                                            type="number"
+                                            min="0"
+                                            prefix="$"
+                                        ></v-text-field>  
+                                    </v-col>
+
+                                    
+                                    <v-col cols="12" sm="6" md="4">
+                                        <v-text-field
+                                            :disabled="deshabilitarEdicionCamposABMCobros"
+                                            v-model="retencion_iva"
+                                            :rules="requeridoRules"
+                                            label="Retención IVA *"
+                                            type="number"
+                                            min="0"
+                                            prefix="$"
+                                        ></v-text-field>  
+                                    </v-col>
+
+                                    
+                                    <v-col cols="12" sm="6" md="4">
+                                        <v-text-field
+                                            :disabled="deshabilitarEdicionCamposABMCobros"
+                                            v-model="retencion_otra"
+                                            :rules="requeridoRules"
+                                            label="Retención Otra *"
+                                            type="number"
+                                            min="0"
+                                            prefix="$"
+                                        ></v-text-field>  
+                                    </v-col>
+                                </v-row>
+                            <!-- FIN IMPORTES -->
+
+
+
                             <!-- INICIO DEPOSITO DESTINO -->
-                                <v-col cols="12" sm="6" md="4">
+                                
+                            <v-row v-show="tipo_de_cobro_id == 1 || tipo_de_cobro_id == 3">
+                                
+                                <v-divider class="border-opacity-100 my-0 pt-5" :thickness="2"></v-divider>
+                                
+                                <v-col cols="12" sm="12" md="12">
                                     <v-switch
-                                        v-show="tipo_de_cobro_id != 2"
                                         :disabled="deshabilitarEdicionCamposABMCobros"
                                         v-model="cobro_depositado"
                                         color="success"
-                                        label="Cobro Depositado"
+                                        :label="'A su vez, este Cobro en '+tipo_de_cobro+' se ha depositado'"
                                     ></v-switch>
-                                </v-col>                            
+                                </v-col>
+                            </v-row>
+
+                            <v-row v-show="(tipo_de_cobro_id == 1 || tipo_de_cobro_id == 3) && cobro_depositado">
                                 <v-col cols="12" sm="6" md="4">
                                     <v-text-field
-                                        v-show="cobro_depositado"
                                         :disabled="deshabilitarEdicionCamposABMCobros"
                                         v-model="cobro.deposito_de_destino.fecha_de_deposito_f"
                                         label="Fecha de deposito"
@@ -299,7 +440,6 @@
                                 </v-col>                                   
                                 <v-col cols="12" sm="6" md="4">
                                     <v-autocomplete
-                                        v-show="cobro_depositado"
                                         v-model="cobro.deposito_de_destino.persona_que_deposito.id"
                                         :items="personas"
                                         :disabled="deshabilitarEdicionCamposABMCobros"
@@ -311,6 +451,18 @@
                                         required
                                     ></v-autocomplete>      
                                 </v-col>
+                                <v-col cols="12" sm="6" md="4">
+                                    <v-select
+                                        v-model="cobro.deposito_de_destino.cuenta_de_destino.id"
+                                        :items="cuentas"
+                                        :disabled="deshabilitarEdicionCamposABMCobros"
+                                        item-title="detalle_select"
+                                        item-value="id"
+                                        label="Cuenta destino *"
+                                        required
+                                    ></v-select>     
+                                </v-col>
+                                
                                 <v-col cols="12" sm="12" md="12">
                                     <v-radio-group 
                                     v-model="se_deposito_destino"
@@ -331,32 +483,41 @@
                                     </v-radio>
                                     </v-radio-group>
                                 </v-col>
+                            </v-row>
                             <!-- FIN DEPOSITO DESTINO -->
 
-                            
-                            <v-col cols="12" sm="12" md="12" v-show="Object.keys(facturas_de_trabajo).length>0"> 
-                                    <p>Seleccione las facturas pagadas:</p>
-                                    <v-checkbox class="checkbox_factura"                                    
-                                    v-for="item in facturas_de_trabajo"
-                                    :key="item.id"
-                                    :label="'Factura nro: '+ item.nro_de_factura"
-                                    :value="item.id"
-                                    v-model="facturas"
-                                    ></v-checkbox>
-                            </v-col>
-
-                            <v-col cols="12" sm="12" md="12">
-                                <v-textarea
-                                    :disabled="deshabilitarEdicionCamposABMCobros"
-                                    label="Observaciones"
-                                    counter="250"
-                                    maxlength="250"
-                                    v-model="cobro.observaciones"
-                                ></v-textarea>
-                            </v-col>
-
-
-                        </v-row>       
+                            <!-- SECCION FINAL -->  
+                            <v-row>                        
+                                <!-- FACTURAS ASOCIADAS -->  
+                                <v-col cols="12" sm="12" md="12" v-show="Object.keys(facturas_de_trabajo).length>0"> 
+                                        <p>Seleccione las facturas pagadas:</p>
+                                        <v-checkbox class="checkbox_factura"                                    
+                                        v-for="item in facturas_de_trabajo"
+                                        :key="item.id"
+                                        :value="item.id"
+                                        v-model="facturas"
+                                        v-show="!item.factura_saldada || facturas.includes(item.id) || mostrarFacturasOk"
+                                        >
+                                        <template v-slot:label>
+                                            {{ labelFactura(item) }}
+                                        </template>
+                                    </v-checkbox>
+                                </v-col>
+                                <v-col cols="12" sm="12" md="12" v-show="Object.keys(facturas_de_trabajo).length>0"> 
+                                    <v-switch v-model="mostrarFacturasOk" label="Mostrar todas las facturas" color="success"></v-switch>
+                                </v-col>
+                                <!-- OBSERVACIONES -->                            
+                                <v-col cols="12" sm="12" md="12">
+                                    <v-textarea
+                                        :disabled="deshabilitarEdicionCamposABMCobros"
+                                        label="Observaciones generales del cobro"
+                                        counter="250"
+                                        maxlength="250"
+                                        v-model="cobro.observaciones"
+                                    ></v-textarea>
+                                </v-col>
+                            </v-row>       
+                            <!-- FIN SECCION FINAL -->  
 
 
                         <v-spacer></v-spacer>
@@ -364,6 +525,7 @@
                             class="ma-2"
                             color="primary"
                             @click="validate"
+                            :disabled="loading"
                         >
                             <v-icon
                             start
@@ -375,6 +537,7 @@
                             class="ma-2"
                             color="grey"
                             @click="dialog = false"
+                            :disabled="loading"
                         >
                             <v-icon
                             start
@@ -382,6 +545,13 @@
                             ></v-icon>
                             Cerrar  
                         </v-btn>
+                        
+                        <v-progress-circular
+                        indeterminate
+                        color="amber"
+                        v-show="loading"
+                        ></v-progress-circular>
+
                     </v-form>
 
                 </v-container>
@@ -396,14 +566,16 @@
 </template>
 
 <script setup>
-  import { ref, watch, reactive } from "vue";
+  import { ref, watch, reactive, computed } from "vue";
   import axios from "axios";
   import { useData } from '../composables/useData';
   import router from "@/router";
   import { isProxy, toRaw } from 'vue';
 
-  const { ENDPOINT_PATH_API, token, headersAxios, trabajo_encabezado_id, user_id } = useData();
+  const { token, headersAxios, trabajo_encabezado_id, user_id } = useData();
+  const ENDPOINT_PATH_API = ref(import.meta.env.VITE_ENDPOINT_PATH+'api/')
   const mensaje = ref(null);
+  const loading = ref(false)
   let dialog = ref(false)
   let cobro = ref({
             tipo_de_cobro: {
@@ -415,13 +587,26 @@
   let botonABM = ref(null)
   let deshabilitarEdicionCamposABMCobros = ref(false)
   let accionABM = ref(null)
-  let importe = ref(null)
-  let tipo_de_cobro_detalle = ref(null)
+  let importe_neto = ref(null)
+  let importe_iva = ref(null)
+  let importe_no_grabado = ref(null)
+  let retencion_iibb = ref(null)
+  let retencion_ganancias = ref(null)
+  let retencion_suss = ref(null)
+  let retencion_iva = ref(null)
+  let retencion_otra = ref(null)
+  let importe_total = ref(null)
+  let tipo_de_cobro_detalle = ref('Importe Total')
   let cobro_depositado = ref(null)
   let se_deposito_destino = ref(null)
   let tipo_de_cobro_id = ref(1)
+  let tipo_de_cobro = ref(null)
   let tipo_de_cobro_id_original = ref(null)
   let txtNotificarCambioTipoDeCobro = ref(null)
+  let confirmado = ref(false)
+  let otros_importes = ref(false)
+  let mostrarFacturasOk = ref(false)
+
   //Variables trabajos_encabezados
   const formCobros = ref(null) 
   let facturas = ref([])
@@ -467,31 +652,66 @@
   //Rules de los Campos
   let validCobro = ref(true);
   const fecha_de_cobroRules = [
-    v => !!v || 'Es requerido'
+    v => !!v || 'Fecha de Cobro Es requerido'
   ];
   const cuenta_de_destinoRules = [
-    v => !!v || 'Es requerido'
+    v => !!v || 'Cuenta Destino Es requerido'
   ];
   const persona_que_cobroRules = [
-    v => !!v || 'Es requerido'
+    v => !!v || 'Persona es requerido'
   ];
   const tipo_de_cobroRules = [
-    v => !!v || 'Es requerido'
+    v => !!v || 'Tipo de cobro Es requerido'
   ];
   const importeRules = [
-    v => !!v || 'Es requerido'
+    v => !!v || 'Importe Es requerido'
   ];
+  const requeridoRules = [
+    v => (!!v || v==0) || 'este valor es requerido, puede ser cero también'
+  ];
+  /*
+  const requeridoRules = [
+    v => (!!v || v==0) || 'Es requerido'
+  ];
+  */
+/*
+  let requeridoRules = [
+      value => {
+          if (value) {
+
+            
+            if (!value) {
+                return 'E-mail es requerido'
+            }
+            
+            if (value && !(/.+@.+\..+/.test(value))) {
+                return 'E-mail debe ser valido'
+            }
+          }
+          else {
+            return 'Es requerido'
+          }
+          return true
+      }
+  ]
+*/
 
   //Valido el Formulario
   async function validate () {
-    await formCobros.value.validate()
+    let vaaaa = await formCobros.value.validate()
+    console.log('entro')
     if (validCobro.value) {
         enviarFormCobro()
     }    
+    else {
+        console.log(vaaaa)
+    }
   }
   
   //Envio el Formulario
   async function enviarFormCobro() {
+
+    loading.value = true
 
     let cuenta_de_destino_id = cobro.value.cuenta_de_destino.id
     if (typeof(cuenta_de_destino_id) == 'object') {
@@ -504,6 +724,7 @@
         causa_de_baja_de_cheque_id = causa_de_baja_de_cheque_id.id
         }
     }
+    let confirmado_sino = tf_a_sino(confirmado.value)
 
     //construjo el json a enviar a laravel
     json = JSON.stringify({ 
@@ -513,28 +734,37 @@
       cuenta_de_destino_id: cuenta_de_destino_id,
       tipo_de_cobro_id: tipo_de_cobro_id.value,
       observaciones: cobro.value.observaciones,
-      importe: importe.value,
-      deposito_de_cobro: {
-        fecha_de_deposito: cobro.value.deposito_de_cobro.fecha_de_deposito_f
-        },
+      importe_neto: importe_neto.value,
+      importe_iva: importe_iva.value,
+      importe_no_grabado: importe_no_grabado.value,
+      retencion_iibb: retencion_iibb.value,
+      retencion_ganancias: retencion_ganancias.value,
+      retencion_suss: retencion_suss.value,
+      retencion_iva: retencion_iva.value,
+      retencion_otra: retencion_otra.value,      
+      importe_total: importe_total.value,
+      //deposito_de_cobro: {
+      //  fecha_de_deposito: cobro.value.deposito_de_cobro.fecha_de_deposito_f
+      //  },
       cheque: {
+        emisor: cobro.value.cheque.emisor,
         numero_de_cheque: cobro.value.cheque.numero_de_cheque,
         banco_id: cobro.value.cheque.banco.id,
-        fecha_de_emision: cobro.value.cheque.fecha_de_emision_f,
+        //fecha_de_emision: cobro.value.cheque.fecha_de_emision_f,
         fecha_inicio_de_cobro: cobro.value.cheque.fecha_inicio_de_cobro_f,
         fecha_de_vencimiento: cobro.value.cheque.fecha_de_vencimiento_f,
-        fecha_de_cobro: cobro.value.cheque.fecha_de_cobro_f,
-        persona_que_cobro_id: cobro.value.cheque.persona_que_cobro.id,
         causa_de_baja_de_cheque_id: causa_de_baja_de_cheque_id
         },
       cobro_depositado: cobro_depositado.value,
       deposito_de_destino: {
         fecha_de_deposito: cobro.value.deposito_de_destino.fecha_de_deposito_f,
         persona_que_deposito_id: cobro.value.deposito_de_destino.persona_que_deposito.id,
+        cuenta_de_destino_id: cobro.value.deposito_de_destino.cuenta_de_destino.id,
         se_deposito_destino: se_deposito_destino.value
       },
       user_id: user_id.value,
-      facturas: facturas.value
+      confirmado: tf_a_sino(confirmado.value),
+      facturas: facturas.value,
     });
     
     //Si cobro_id = -1 creo la linea de trabajo sino actualizo
@@ -562,16 +792,30 @@
     listaCobros.value = body['data'];
 
     getTime()
+    loading.value = false
   }
 
   function ABMLinea(accion, item) {
     accionABM.value = accion
+    console.log(accion)
+    facturas.value = []
+
     if (accion == 'A') {
         cobro_id.value = -1
-        importe.value = null
+        importe_neto.value = 0
+        importe_iva.value = 0
+        importe_no_grabado.value = 0
+        retencion_iibb.value = 0
+        retencion_ganancias.value = 0
+        retencion_suss.value = 0
+        retencion_iva.value = 0
+        retencion_otra.value = 0
+        importe_total.value = 0
         cobro_depositado.value = false
         se_deposito_destino.value = null
         tipo_de_cobro_id_original.value = null
+        confirmado.value = false
+        otros_importes.value = false
         cobro.value = {
 
             trabajo_encabezado_id: trabajo_encabezado_id.value,
@@ -586,23 +830,22 @@
                 id: null
             },
             observaciones: null,
+            /*
             deposito_de_cobro: {
                 id: null,
                 fecha_de_deposito: null,
                 fecha_de_deposito_f: null
                 },
+            */
             cheque: {
+                emisor:null,
                 numero_de_cheque: null,
                 banco: {
                     id: null
                     },
-                fecha_de_emision: null,
+                //fecha_de_emision: null,
                 fecha_inicio_de_cobro: null,
                 fecha_de_vencimiento: null,
-                fecha_de_cobro: null,
-                persona_que_cobro: {
-                    id: null
-                    },
                 causa_de_baja_de_cheque: {
                     id: null
                     }
@@ -612,7 +855,11 @@
                 importe: null,
                 persona_que_deposito: {
                     id: null
-                    }                
+                    },
+                cuenta_de_destino: {
+                    id: null
+                    }            
+                        
             },
             user_id: user_id.value,
             facturas: [
@@ -630,23 +877,33 @@
     else {
         cobro.value = item
         cobro_id.value = cobro.value.id 
-        importe.value = cobro.value.importe   
+        importe_neto.value = cobro.value.importe_neto   
+        importe_iva.value = cobro.value.importe_iva   
+        importe_no_grabado.value = cobro.value.importe_no_grabado
+        retencion_iibb.value = cobro.value.retencion_iibb
+        retencion_ganancias.value = cobro.value.retencion_ganancias
+        retencion_suss.value = cobro.value.retencion_suss
+        retencion_iva.value = cobro.value.retencion_iva
+        retencion_otra.value = cobro.value.retencion_otra
+        importe_total.value = cobro.value.importe_total   
         tipo_de_cobro_id_original.value = cobro.value.tipo_de_cobro.id
-        if (cobro.value.persona_que_cobro == null) {
+        otros_importes.value = checkOtrosImportes()
+        if (!cobro.value.persona_que_cobro) {
             cobro.value.persona_que_cobro = {
                 id: null
             }
         }  
-        if (cobro.value.cuenta_de_destino == null) {
+        if (!cobro.value.cuenta_de_destino) {
             cobro.value.cuenta_de_destino = {
                 id: null
             }
         }  
-        if (cobro.value.tipo_de_cobro == null) {
+        if (!cobro.value.tipo_de_cobro) {
             cobro.value.tipo_de_cobro = {
                 id: null
             }
         }  
+        /*
         if (cobro.value.deposito_de_cobro == null) {
             cobro.value.deposito_de_cobro = {
                 id: null,
@@ -654,39 +911,75 @@
                 fecha_de_deposito_f: null
             }
         }  
-        if (cobro.value.cheque == null) {
+        */
+
+        // SI EL CHEQUE ES NULO
+        if (!cobro.value.cheque) {
             cobro.value.cheque = {
                 id: null,
+                emisor: null,
                 numero_de_cheque: null,
                 banco: {
                     id: null
                     },
-                fecha_de_emision: null,
+                //fecha_de_emision: null,
                 fecha_inicio_de_cobro: null,
                 fecha_de_vencimiento: null,
-                fecha_de_cobro: null,
-                persona_que_cobro: {
-                    id: null
-                    },
                 causa_de_baja_de_cheque: {
                     id: null
                     }
             }
         }
         else {
-            if (cobro.value.cheque.causa_de_baja_de_cheque == null) {
+            //SI HAY UN CHEQUE
+            if (!cobro.value.cheque.causa_de_baja_de_cheque) {
                 cobro.value.cheque.causa_de_baja_de_cheque = {
                     id: null
                     }
             }
+            if (!cobro.value.cheque.banco) {
+                cobro.value.cheque.banco = {
+                    id: null
+                    }
+            }
+            
+            if (!cobro.value.deposito_de_destino) {
+                cobro.value.deposito_de_destino = {
+                    id: null,
+                    persona_que_deposito: {
+                        id: null
+                    },
+                    cuenta_de_destino: {
+                        id: null
+                    }
+                }
+            }
+            /*
+            if (cobro.value.deposito_de_destino.persona_que_deposito == null) {
+                cobro.value.deposito_de_destino.persona_que_deposito = {
+                    id: null
+                    }
+            }
+            */
+            if (!cobro.value.deposito_de_destino.cuenta_de_destino) {
+                cobro.value.deposito_de_destino.cuenta_de_destino = {
+                    id: null
+                    }
+            }
+            
 
 
         }  
-        if (cobro.value.deposito_de_destino == null) {
+
+        // SI NO HAY DEPOSITO DESTINO 
+        if (cobro.value.deposito_de_destino?.id == null) {
             cobro.value.deposito_de_destino = {
                 id: null,
                 fecha_de_deposito: null,
                 persona_que_deposito: {
+                    id: null
+                    },
+                cuenta_de_destino: {
                     id: null
                     },
                 se_deposito_destino: null
@@ -696,13 +989,14 @@
 
         }
         else {
-                cobro_depositado.value = true
-                if (cobro.value.deposito_de_destino.cheque == null) {
-                    se_deposito_destino.value = 'deposito_destino_efectivo'
-                }
-                else {
-                    se_deposito_destino.value = 'deposito_destino_cheque'
-                }
+            // SI HAY DEPOSITO DESTINO 
+            cobro_depositado.value = true
+            if (!cobro.value.deposito_de_destino.cheque) {
+                se_deposito_destino.value = 'deposito_destino_efectivo'
+            }
+            else {
+                se_deposito_destino.value = 'deposito_destino_cheque'
+            }
         }
     }
     if (accion == 'M') {
@@ -712,15 +1006,26 @@
         item.facturas.forEach( function(valor, indice, array) {
             facturas.value.push(valor.factura_id)
         });
+        confirmado.value = sino_a_tf(cobro.value.confirmado)
 
         deshabilitarEdicionCamposABMCobros.value = false       
     }
     if (accion == 'B') {
-            botonABM.value = 'Eliminar';     
-            deshabilitarEdicionCamposABMCobros.value = true       
+        botonABM.value = 'Eliminar';     
+        deshabilitarEdicionCamposABMCobros.value = true       
+        confirmado.value = sino_a_tf(cobro.value.confirmado)
     }
   }
 
+  function sino_a_tf(sino) {
+    return sino == 'SI' ? true : false
+  }
+
+  function tf_a_sino(tf) {
+    console.log('tf')
+    console.log(tf)
+    return tf ? 'SI' : 'NO'
+  }
 
   function getTime() {
     setTimeout(() => {
@@ -729,23 +1034,24 @@
 
   }
 
-
+    /*
     function traerImporte() {
+        importe_neto.value = cobro.importe_neto
+        importe_iva.value = cobro.importe_iva
+        importe_total.value = cobro.importe_total
         if (cobro.value.tipo_de_cobro.id == 1) {
-            importe.value = cobro.importe
             tipo_de_cobro_detalle.value = 'Importe efectivo'
         }
         if (cobro.value.tipo_de_cobro.id == 2) {
-            importe.value = cobro.deposito_destino.importe
             tipo_de_cobro_detalle.value = 'Importe depositado'
         }
         if (cobro.value.tipo_de_cobro.id == 3) {
-            importe.value = cobro.cheque.importe
             tipo_de_cobro_detalle.value = 'Importe del cheque'
         }
 
         return importe.value
     }
+    */
     
     /*
     // watch works directly on a ref
@@ -763,16 +1069,71 @@
         () => cobro.value.tipo_de_cobro.id,
         (newValue, oldValue) => {
             txtNotificarCambioTipoDeCobro.value = ''
-            if (tipo_de_cobro_id_original.value == 2 && accionABM.value == 'M' && (newValue == 1 || newValue == 3)) {
+            if (tipo_de_cobro_id_original.value == 2 && accionABM.value == 'M' && (newValue == 1 || newValue == 3 || newValue == 5)) {
                 txtNotificarCambioTipoDeCobro.value = 'Este cambio, eliminirá el deposito cargado anteriormente'
             }
-            if (tipo_de_cobro_id_original.value == 3 && accionABM.value == 'M' && (newValue == 1 || newValue == 2)) {
+            if (tipo_de_cobro_id_original.value == 3 && accionABM.value == 'M' && (newValue == 1 || newValue == 2 || newValue == 5)) {
                 txtNotificarCambioTipoDeCobro.value = 'Este cambio, eliminará el cheque cargado anteriormente'
             }
             tipo_de_cobro_id.value = newValue
+            tipo_de_cobro.value = ''
+            if (newValue == 1) {
+                tipo_de_cobro.value = 'Efectivo'
+            }
+            if (newValue == 3 || newValue == 4) {
+                tipo_de_cobro.value = 'Cheque'
+            }
+            if (newValue == 2 || newValue == 4 || newValue == 5) {
+                cobro_depositado.value = false
+            }
         }
     )    
 
+    watch(
+        () => cobro.value.cheque?.fecha_inicio_de_cobro_f,
+        (newValue, oldValue) => {
+            if (newValue != '' && typeof newValue === 'string') {
+                cobro.value.cheque.fecha_de_vencimiento_f = calcularFechaDeVencimiento(newValue)
+            }
+            
+        }
+        
+    )  
+
+    function calcularFechaDeVencimiento(fechaStr) {
+        // Convertir el string a objeto de fecha
+        let fechaObj = new Date(fechaStr);
+
+        // Sumarle 29 días
+        fechaObj.setDate(fechaObj.getDate() + 29);
+
+        // Formatear la nueva fecha como string 'yyyy-mm-dd'
+        let nuevaFechaStr = fechaObj.toISOString().split('T')[0];
+
+        return nuevaFechaStr;
+    }
+
+
+
+    function checkOtrosImportes() {
+        let check = false
+        check = importe_no_grabado.value > 0 ? true : check
+        check = retencion_iibb.value > 0 ? true : check
+        check = retencion_ganancias.value > 0 ? true : check
+        check = retencion_suss.value > 0 ? true : check
+        check = retencion_iva.value > 0 ? true : check
+        check = retencion_otra.value > 0 ? true : check
+        console.log('check')
+        console.log(check)
+        return check
+    }
+
+    function labelFactura(item) {
+        let texto = ' Factura nro: '+ item.nro_de_factura
+        texto += item.factura_saldada ? ' (saldada)' : ''
+        //texto += item.factura_saldada ? ' (saldada)' : 'resta cobrar: '+item.importe_restante_a_cobrar
+        return texto
+    }
 </script>
 
 
@@ -780,5 +1141,12 @@
 <style scoped>
 .checkbox_factura {
     margin-bottom: -50px;
+}
+
+.noconfirmado {
+  background-color: #ffbdc3;
+}
+.confirmado {
+  background-color: #c4ffbd;
 }
 </style>

@@ -96,8 +96,9 @@
             const token = this.result_login['data']['access_token'];
             const name = this.result_login['data']['name'];
             const user_id = this.result_login['data']['user_id'];
+            const rol_de_usuario_id = this.result_login['data']['rol_de_usuario_id'];
 
-            auth.setUserLogged(this.email, true, token, name, user_id); 
+            auth.setUserLogged(this.email, true, token, name, user_id, rol_de_usuario_id); 
                     
             this.$router.push("/");
          } catch (error) {

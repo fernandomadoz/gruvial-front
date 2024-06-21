@@ -22,14 +22,11 @@
                 <tr>
                     <th class="text-left">Accion</th>
                     <th class="text-left">id</th>
-                    <th class="text-left">Razon Social</th>
                     <th class="text-left">Factura</th>
                     <th class="text-left">Fecha de Factura</th>
                     <th class="text-left">Descripcion</th>
                     <th class="text-left">Archivo</th>
                     <th class="text-left">Importe Total</th>
-                    <th class="text-left">Importe Cobrado</th>
-                    <th class="text-left">Resta Cobrar</th>
                     
                 </tr>
                 </thead>
@@ -37,7 +34,6 @@
                 <tr
                     v-for="item in listaFacturas"
                     :key="item.id"
-                    v-bind:class="{ nopagado: !item.factura_saldada, pagado: item.factura_saldada }"
                 >
                     <td>
                         <v-btn
@@ -56,8 +52,7 @@
                         ></v-btn>
                     </td>
                     <td>{{ (item.id) }}</td>
-                    <td>{{ (item.razon_social.razon_social) }} </td>
-                    <td>{{ item.tipo_de_factura.tipo_de_factura }} Nro: {{item.nro_de_factura}}</td>
+                    <td>{{ item.tipo_de_factura.razon_social }} {{ item.tipo_de_factura.tipo_de_factura }} Nro: {{item.nro_de_factura}}</td>
                     <td>{{ item.fecha_de_factura }}</td>
                     <td>{{ item.descripcion }}</td>
                     <td>
@@ -70,8 +65,6 @@
                             </a>
                     </td>
                     <td>${{ item.importe_total }}</td>
-                    <td>${{ item.importe_cobrado }}</td>
-                    <td>${{ item.importe_restante_a_cobrar }}</td>
                     
                 </tr>
                 </tbody>
@@ -101,7 +94,7 @@
                         v-model="validFactura"
                         lazy-validation
                     >
-                        <v-row>
+                        <v-row>  
                             <v-col cols="12" sm="6" md="4">
                                 <v-select
                                     v-model="factura.razon_social.id"
@@ -109,7 +102,7 @@
                                     :disabled="deshabilitarEdicionCamposABMFacturas"
                                     item-title="razon_social"
                                     item-value="id"
-                                    label="Razon Social *"
+                                    label="Facturado a *"
                                     :rules="razon_socialRules"
                                     required="required"
                                 ></v-select>    
@@ -123,6 +116,7 @@
                                     item-value="id"
                                     required="required"
                                     label="Tipo de Factura *"
+                                    return-object
                                 ></v-select>     
                             </v-col>
                             <v-col cols="12" sm="6" md="4">
@@ -135,21 +129,6 @@
                                     required
                                 ></v-text-field>  
                             </v-col>
-                        </v-row>
-                            
-                        <v-row v-if="factura.tipo_de_factura.id==7">
-                            <v-col cols="12" sm="12" md="12">
-                                <v-select
-                                    v-model="factura.factura_cancelada_id"
-                                    :items="facturasPorTrabajo"
-                                    item-title="detalle_select"
-                                    item-value="id"
-                                    label="Indica la factura donde aplicaras el crédito"
-                                ></v-select>     
-                            </v-col>
-                        </v-row>
-                            
-                        <v-row>
                             <v-col cols="12" sm="6" md="4">
                                 <v-text-field
                                     :disabled="deshabilitarEdicionCamposABMFacturas"
@@ -196,14 +175,41 @@
                                     prefix="$"
                                 ></v-text-field>  
                             </v-col>
-                            
                             <v-col cols="12" sm="6" md="4">
-                                <v-switch
-                                    :disabled="deshabilitarEdicionCamposABMEncabezado"
-                                    v-model="anulada"
-                                    color="success"
-                                    label="Anulada"
-                                ></v-switch>
+                                <v-text-field
+                                    :disabled="deshabilitarEdicionCamposABMFacturas"
+                                    v-model="factura.importe_no_grabado"
+                                    :rules="importeRules"
+                                    label="No grabado"
+                                    required="required"
+                                    type="number"
+                                    min="0"
+                                    prefix="$"
+                                ></v-text-field>  
+                            </v-col>
+                            <v-col cols="12" sm="6" md="4">
+                                <v-text-field
+                                    :disabled="deshabilitarEdicionCamposABMFacturas"
+                                    v-model="factura.importe_percepcion_iibb"
+                                    :rules="importeRules"
+                                    label="Retencion IIBB"
+                                    required="required"
+                                    type="number"
+                                    min="0"
+                                    prefix="$"
+                                ></v-text-field>  
+                            </v-col>
+                            <v-col cols="12" sm="6" md="4">
+                                <v-text-field
+                                    :disabled="deshabilitarEdicionCamposABMFacturas"
+                                    v-model="factura.importe_percepcion_iva"
+                                    :rules="importeRules"
+                                    label="Percepcion IVA"
+                                    required="required"
+                                    type="number"
+                                    min="0"
+                                    prefix="$"
+                                ></v-text-field>  
                             </v-col>
 
                             <!-- Arvhivo mostrar-->
@@ -229,39 +235,6 @@
                                 ></v-file-input>
                             </v-col>
 
-                            <v-col cols="12" sm="12" md="12" v-show="Object.keys(remitos_de_trabajo).length>0"> 
-                                    <p>Seleccione los remitos facturados:</p>
-                                    <v-checkbox class="checkbox_remito"                                    
-                                    v-for="item in remitos_de_trabajo"
-                                    :key="item.id"
-                                    :label="'Remito nro: '+ item.nro_de_remito"
-                                    :value="item.id"
-                                    v-model="remitos"
-                                    v-show="!item.remito_facturado || remitos.includes(item.id) || mostrarRemitosOk"
-                                    ></v-checkbox>
-                            </v-col>
-
-                            <v-col cols="12" sm="12" md="12" v-show="Object.keys(remitos_de_trabajo).length>0"> 
-                                <v-switch v-model="mostrarRemitosOk" label="Mostrar todos los remitos" color="success"></v-switch>
-                            </v-col>
-
-                            <v-col cols="12" sm="12" md="12" v-show="Object.keys(lineas_de_trabajo).length>0"> 
-                                    <p>Seleccione los servicios facturados:</p>
-                                    <v-checkbox class="checkbox_remito"                                    
-                                    v-for="item in lineas_de_trabajo"
-                                    :key="item.id"
-                                    :label="item.fecha_inicio +' '+item.maquina?.nombre_de_maquina + ' $'+item.importe "
-                                    :value="item.id"
-                                    v-model="lineas"
-                                    v-show="!item.linea_facturada || lineas.includes(item.id) || mostrarLineasOk"
-                                    ></v-checkbox>
-                            </v-col>
-
-                            
-                            <v-col cols="12" sm="12" md="12" v-show="Object.keys(lineas_de_trabajo).length>0"> 
-                                <v-switch v-model="mostrarLineasOk" label="Mostrar todos los servicios" color="success"></v-switch>
-                            </v-col>
-
                             <v-col cols="12" sm="12" md="12">
                                 <v-textarea
                                     :disabled="deshabilitarEdicionCamposABMFacturas"
@@ -280,7 +253,7 @@
                             class="ma-2"
                             color="primary"
                             @click="validate"
-                            loading.value = false
+                            :disabled="loading"
                         >
                             <v-icon
                             start
@@ -292,6 +265,7 @@
                             class="ma-2"
                             color="grey"
                             @click="dialog = false"
+                            :disabled="loading"
                         >
                             <v-icon
                             start
@@ -299,6 +273,13 @@
                             ></v-icon>
                             Cerrar  
                         </v-btn>
+
+                        <v-progress-circular
+                        indeterminate
+                        color="amber"
+                        v-show="loading"
+                        ></v-progress-circular>
+
                     </v-form>
 
                 </v-container>
@@ -313,75 +294,54 @@
 </template>
 
 <script setup>
-  import { ref, watch } from "vue";
+  import { ref } from "vue";
   import { reactive } from "vue";
   import axios from "axios";
   import { useData } from '../composables/useData';
   import router from "@/router";
   import { isProxy, toRaw } from 'vue';
 
-  const { token, headersAxios, headersAxiosFiles, trabajo_encabezado_id, user_id } = useData();
+  const { token, headersAxios, headersAxiosFiles, compra_encabezado_id, user_id } = useData();
   const ENDPOINT_PATH_API = ref(import.meta.env.VITE_ENDPOINT_PATH+'api/')
+
   const error = ref(false);
   const mensaje = ref(null);
   const loading = ref(false)
   let dialog = ref(false)
-  const factura = ref(null)
+  let factura = ref(null)
   let factura_id = ref(null)
   let botonABM = ref(null)
   let deshabilitarEdicionCamposABMFacturas = ref(false)
   let accionABM = ref(null)
-  let remitos = ref([])
-  let lineas = ref([])
-  //Variables trabajos_encabezados
+  //Variables compras_encabezados
   const formFacturas = ref(null) 
   let fecha_de_factura = ref(null)
   const archivo_new = ref([])
-  const anulada = ref(false)
-  const facturasPorTrabajo = ref([])
-  const mostrarRemitosOk = ref(false)
-  const mostrarLineasOk = ref(false)
 
 
   let json = JSON.stringify({ 
-      trabajo_encabezado_id: trabajo_encabezado_id.value
+      compra_encabezado_id: compra_encabezado_id.value
   });
 
-  //Traigo las lineas de trabajo
-  let body = await axios.post(ENDPOINT_PATH_API.value + "trabajo-factura-listar", json, {headers: headersAxios.value[0]});
+  //Traigo las lineas de compra
+  let body = await axios.post(ENDPOINT_PATH_API.value + "compra-factura-listar", json, {headers: headersAxios.value[0]});
   let listaFacturas = ref(body['data']);
           
-  //Traigo razones sociales
-  const body_razones_sociales = await axios.get(ENDPOINT_PATH_API.value + "razon-social", {headers: headersAxios.value[0]})
-  let razones_sociales = body_razones_sociales['data']
-
   //Traigo tipos de facturas
   const body_tipos_de_facturas = await axios.get(ENDPOINT_PATH_API.value + "tipo-de-factura", {headers: headersAxios.value[0]})
   let tipos_de_facturas = body_tipos_de_facturas['data']
 
-  //Traigo los remitos
-  let body_remitos = await axios.post(ENDPOINT_PATH_API.value + "remitos-de-trabajo", json, {headers: headersAxios.value[0]});
-  let remitos_de_trabajo = body_remitos['data']
 
-  //Traigo los remitos
-  let body_lineas = await axios.post(ENDPOINT_PATH_API.value + "trabajo-linea-listar", json, {headers: headersAxios.value[0]});
-  let lineas_de_trabajo = body_lineas['data']
+  //Traigo razones sociales
+  const body_razones_sociales = await axios.get(ENDPOINT_PATH_API.value + "razon-social", {headers: headersAxios.value[0]})
+  let razones_sociales = body_razones_sociales['data']
 
-
-  //Traigo los facturas por trabajo
-  let jsonTrabajos = JSON.stringify({ 
-        trabajo_encabezado_id: trabajo_encabezado_id.value,
-    })
-  let body_facturasPorTrabajo = await axios.post(ENDPOINT_PATH_API.value + "facturas-por-trabajo", jsonTrabajos, {headers: headersAxios.value[0]})
-  facturasPorTrabajo.value = body_facturasPorTrabajo['data']
 
   // ----- Inicio: Validación y envio del Formulario Encabezado
 
   //Rules de los Campos
   let validFactura = ref(true);
-  const razon_socialRules = [
-    v => !!v || 'Es requerido'
-  ];
+  
   const fecha_de_facturaRules = [
     v => !!v || 'Es requerido'
   ];
@@ -391,12 +351,12 @@
   const tipo_de_facturaRules = [
     v => !!v || 'Es requerido'
   ];
-  const descripcionRules = [
-    //v => !!v || 'Es requerido'
+  const razon_socialRules = [
+    v => !!v || 'Es requerido'
   ];
-  
+    
   const importeRules = [
-    v => (!!v || v==0 || accionABM.value == 'B') || 'Es requerido'
+    v => (!!v || v==0) || 'Es requerido'
   ];
   
 
@@ -422,74 +382,72 @@
 
     loading.value = true
 
-    let anulada_sino = tf_a_sino(anulada.value)
-    console.log('anulada_sino')
-    console.log(anulada_sino)
-
+    let tipo_de_factura_id = factura.value.tipo_de_factura.id
+    if (typeof(tipo_de_factura_id) == 'object') {
+      tipo_de_factura_id = tipo_de_factura_id.id
+    }
 
     
     var formData = new FormData();
     
     formData.append("factura_id", factura_id.value)
-    formData.append("trabajo_encabezado_id", trabajo_encabezado_id.value)
+    formData.append("compra_encabezado_id", compra_encabezado_id.value)
+    formData.append("tipo_de_factura_id", tipo_de_factura_id)
     formData.append("razon_social_id", factura.value.razon_social.id)
-    formData.append("tipo_de_factura_id", factura.value.tipo_de_factura.id)
     formData.append("fecha_de_factura", factura.value.fecha_de_factura_f)
-    formData.append("factura_cancelada_id", factura.value.factura_cancelada_id)
     formData.append("nro_de_factura", factura.value.nro_de_factura)
     formData.append("descripcion", factura.value.descripcion)
     formData.append("importe_neto", factura.value.importe_neto)
     formData.append("importe_iva", factura.value.importe_iva)
+    formData.append("importe_no_grabado", factura.value.importe_no_grabado)
+    formData.append("importe_percepcion_iibb", factura.value.importe_percepcion_iibb)
+    formData.append("importe_percepcion_iva", factura.value.importe_percepcion_iva)
     formData.append("importe_total", factura.value.importe_total)
-    formData.append("anulada", anulada_sino)
-    formData.append("remitos", remitos.value)
-    formData.append("lineas", lineas.value)
 
     formData.append("archivo_new", archivo_new.value[0]);
     //files.value.forEach((value, key) => formData.append("user_file_"+(key), value[0]));
     
     //construjo el json a enviar a laravel
     json = JSON.stringify({ 
-      trabajo_encabezado_id: trabajo_encabezado_id.value,
-      razon_social_id: factura.value.razon_social.id,
-      tipo_de_factura_id: factura.value.tipo_de_factura.id,
+      compra_encabezado_id: compra_encabezado_id.value,
+      tipo_de_factura_id: tipo_de_factura_id,
+      razon_social: factura.value.razon_social.id,
       fecha_de_factura: factura.value.fecha_de_factura_f,
-      factura_cancelada_id: factura.value.factura_cancelada_id,
       nro_de_factura: factura.value.nro_de_factura,
       descripcion: factura.value.descripcion,
       importe_neto: factura.value.importe_neto,
       importe_iva: factura.value.importe_iva,
+      importe_no_grabado: factura.value.importe_no_grabado,
+      importe_percepcion_iibb: factura.value.importe_percepcion_iibb,
+      importe_percepcion_iva: factura.value.importe_percepcion_iva,
       importe_total: factura.value.importe_total,
-      anulada: anulada_sino,
-      remitos: remitos.value,
-      lineas: lineas.value,
       archivo_new: archivo_new.value
     });
     
-    //Si factura_id = -1 creo la linea de trabajo sino actualizo
+    //Si factura_id = -1 creo la linea de compra sino actualizo
     let body_abm = ''
 
     if (accionABM.value == 'A') {
-      body_abm = await axios.post(ENDPOINT_PATH_API.value + "factura-create", formData, {headers: headersAxiosFiles.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "factura-compra-create", formData, {headers: headersAxiosFiles.value[0]})
     }
 
     if (accionABM.value == 'M') {
-      body_abm = await axios.post(ENDPOINT_PATH_API.value + "factura-update", formData, {headers: headersAxiosFiles.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "factura-compra-update", formData, {headers: headersAxiosFiles.value[0]})
     }  
     
     if (accionABM.value == 'B') {
-      body_abm = await axios.delete(ENDPOINT_PATH_API.value + "factura/"+factura_id.value, json, {headers: headersAxios.value[0]})
+      body_abm = await axios.delete(ENDPOINT_PATH_API.value + "factura-compra/"+factura_id.value, json, {headers: headersAxios.value[0]})
     }      
     mensaje.value = body_abm['data'].mensaje
 
     //Traigo las facturas
     json = JSON.stringify({ 
-        trabajo_encabezado_id: trabajo_encabezado_id.value
+        compra_encabezado_id: compra_encabezado_id.value
     });
     dialog.value = false
 
     
-    body = await axios.post(ENDPOINT_PATH_API.value + "trabajo-factura-listar", json, {headers: headersAxios.value[0]})
+    body = await axios.post(ENDPOINT_PATH_API.value + "compra-factura-listar", json, {headers: headersAxios.value[0]})
     listaFacturas.value = body['data'];
 
     getTime()
@@ -500,13 +458,9 @@
     accionABM.value = accion
     if (accion == 'A') {
         factura_id.value = -1
-        
-        remitos.value = []
-        lineas.value = []
-
         factura.value = {
 
-            trabajo_encabezado_id: trabajo_encabezado_id.value,
+            compra_encabezado_id: compra_encabezado_id.value,
             razon_social: {
                 id: null
             },
@@ -515,23 +469,14 @@
             },
             fecha_de_factura: null,
             nro_de_factura: null,
-            factura_cancelada_id: null,
             descripcion: '',
             importe_neto: 0,
             importe_iva: 0,
-            importe_total: 0,
-            remitos: [
-                {
-                    trabajo_linea_id: null
-                },
-            ],
-            lineas: [
-                {
-                    trabajo_linea_id: null
-                },
-            ],
+            importe_no_grabado: 0,
+            importe_percepcion_iibb: 0,
+            importe_percepcion_iva: 0,
+            importe_total: 0
         }
-        anulada.value = false
         
         botonABM.value = 'Insertar';
         deshabilitarEdicionCamposABMFacturas.value = false    
@@ -542,39 +487,17 @@
         factura.value = item
         
         
-        remitos.value = []
-        item.remitos.forEach( function(valor, indice, array) {
-            remitos.value.push(valor.remito_id)
-        });
-        
-        lineas.value = []
-        item.lineas.forEach( function(valor, indice, array) {
-            lineas.value.push(valor.trabajo_linea_id)
-        });
-        
         factura_id.value = factura.value.id        
-        deshabilitarEdicionCamposABMFacturas.value = false
-        anulada.value = sino_a_tf(factura.value.anulada)
-
+        deshabilitarEdicionCamposABMFacturas.value = false       
     }
     if (accion == 'B') {
-        botonABM.value = 'Eliminar';     
-        factura.value = item
-        factura_id.value = factura.value.id   
-        deshabilitarEdicionCamposABMFacturas.value = true       
-        anulada.value = sino_a_tf(factura.value.anulada)
-
+            botonABM.value = 'Eliminar';     
+            factura.value = item
+            factura_id.value = factura.value.id   
+            deshabilitarEdicionCamposABMFacturas.value = true       
     }
   }
 
-
-
-  function sino_a_tf(sino) {
-    return sino == 'SI' ? true : false
-  }
-  function tf_a_sino(tf) {
-    return tf ? 'SI' : 'NO'
-  }
 
   function getTime() {
     setTimeout(() => {
@@ -584,49 +507,8 @@
   }
 
 
-  function calcularIVA() {
-    factura.value.importe_iva = factura.value.importe_total * (21 / (100 + 21))
-    factura.value.importe_iva = factura.value.importe_iva.toFixed(2)
-    factura.value.importe_neto = factura.value.importe_total - factura.value.importe_iva
-    factura.value.importe_neto = factura.value.importe_neto.toFixed(2)
-
-  }
-  
-  watch(
-        () => factura.value?.importe_total,
-        (newValue, oldValue) => {
-            if (newValue>0) {
-                calcularIVA()
-            }
-        }
-    )   
-
-  watch(
-        () => factura.value?.factura_cancelada_id,
-        (newValue, oldValue) => {
-            for (const fact of facturasPorTrabajo.value) {
-                console.log('entro 1')
-                if (fact.id==factura.value.factura_cancelada_id) {
-                    console.log('entro 2')
-                    factura.value.importe_total = fact.importe_total
-                }
-            }
-        }
-    )   
-
-
 </script>
 
 
 <style scoped>
-.checkbox_remito {
-    margin-bottom: -50px;
-}
-
-.nopagado {
-  background-color: #ffbdc3;
-}
-.pagado {
-  background-color: #c4ffbd;
-}
 </style>

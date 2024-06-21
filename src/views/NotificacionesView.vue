@@ -2,15 +2,14 @@
   <v-main>
     <v-container>
         <suspense timeout="0">
-            <TrabajosList/>
+            <Notificaciones />
         </suspense>
     </v-container>
   </v-main>
 </template>
 
 <script setup>
-import { defineComponent } from 'vue';
 
 // Components
-import TrabajosList from '../components/TrabajosList.vue';
+import Notificaciones from '../components/Notificaciones.vue';
 </script>

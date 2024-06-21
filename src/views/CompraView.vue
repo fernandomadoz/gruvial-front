@@ -2,21 +2,21 @@
   <v-main>
     <v-container>
         <suspense timeout="0">
-            <Trabajo  :tab="props.tab" :trabajo_id="props.trabajo_id"/>
+            <Compra  :tab="props.tab" :compra_encabezado_id="props.compra_encabezado_id"/>
         </suspense>
     </v-container>
   </v-main>
 </template>
 
 <script setup>
-import { defineProps } from 'vue';
+import { defineComponent } from 'vue';
 
 // Components
-import Trabajo from '../components/Trabajo.vue';
+import Compra from '../components/Compra.vue';
 
 
 const props = defineProps({
-  trabajo_id: {
+  compra_encabezado_id: {
           type: Number,
           default: null
     },

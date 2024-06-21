@@ -8,6 +8,7 @@
 
               <v-alert type="success" v-show="mensaje != null">{{ mensaje }}</v-alert>
               <hr  v-show="mensaje != null" />    
+              
 
             <v-btn
                 size="small"
@@ -23,14 +24,14 @@
                     <th class="text-left">Accion</th>
                     <th class="text-left">id</th>
                     <th class="text-left">Maquina</th>
-                    <th class="text-left">Lugar de trabajo</th>
+                    <!--th class="text-left">Lugar de trabajo</th-->
                     <th class="text-left">Fecha Inicio</th>
                     <th class="text-left">Fecha Fin</th>
                     <th class="text-left">Tipo de Trabajo</th>
-                    <th class="text-left">Cantidad</th>
+                    <!--th class="text-left">Cantidad</th-->
                     <th class="text-left">Importe</th>
-                    <th class="text-left">Remito</th>
                     <th class="text-left">observaciones</th>
+                    <th class="text-left">Confirmado</th>
                     <th class="text-left">Realizado</th>
                 </tr>
                 </thead>
@@ -38,6 +39,10 @@
                 <tr
                     v-for="item in listaLineas"
                     :key="item.id"
+                    v-bind:class="{ 
+                        realizado: item.trabajo_realizado == 'SI', 
+                        norealizado: item.trabajo_realizado == 'NO', 
+                        }"
                 >
                     <td>
                         <v-btn
@@ -56,19 +61,15 @@
                         ></v-btn>
                     </td>
                     <td>{{ (item.id) }}</td>
-                    <td>{{ (item.maquina.nombre_de_maquina) }}</td>
-                    <td>{{ (item.lugar_de_trabajo) }}</td>
+                    <td>{{ (item.maquina?.nombre_de_maquina) }}</td>
+                    <!--td>{{ (item.lugar_de_trabajo) }}</td-->
                     <td>{{ item.fecha_inicio }}</td>
                     <td>{{ item.fecha_fin }}</td>
-                    <td>{{ (item.tipo_de_trabajo.tipo_de_trabajo) }}</td>
-                    <td>{{ (item.cantidad_unidades_trabajo) }} ({{ (item.unidad_de_trabajo.unidad_de_trabajo) }})</td>
+                    <td>{{ (item.tipo_de_trabajo?.tipo_de_trabajo) }}</td>
+                    <!--td>{{ (item.cantidad_unidades_trabajo) }}</td-->
                     <td>${{ item.importe }}</td>
-                    <td>
-                        Remito: {{ item.nro_de_remito }} <br>
-                        <span v-if="item.persona_que_autoriza != null">Autorizo: {{ item.persona_que_autoriza }} <br></span>
-                        <span v-if="item.persona_que_supervisa != null">Superviso: {{ item.persona_que_supervisa }} <br></span>
-                    </td>
                     <td>{{ item.observaciones }}</td>
+                    <td>{{ item.trabajo_confirmado }}</td>
                     <td>{{ item.trabajo_realizado }}</td>
                 </tr>
                 </tbody>
@@ -113,7 +114,7 @@
                                     required
                                 ></v-autocomplete>      
                             </v-col>
-                            <v-col cols="12" sm="6" md="4">
+                            <!--v-col cols="12" sm="6" md="4">
                                 <v-text-field
                                     v-model="trabajo_linea.lugar_de_trabajo"
                                     :disabled="deshabilitarEdicionCamposABMEncabezado"
@@ -121,7 +122,7 @@
                                     counter="150"
                                     label="Lugar de trabajo"
                                 ></v-text-field>      
-                            </v-col>
+                            </v-col-->
                             <v-col cols="12" sm="6" md="4">
                                 <v-select
                                     v-model="trabajo_linea.tipo_de_trabajo.id"
@@ -130,7 +131,6 @@
                                     item-title="tipo_de_trabajo"
                                     item-value="id"
                                     label="Tipo de Trabajo"
-                                    return-object
                                     :rules="tipo_de_trabajoRules"
                                     required
                                 ></v-select>     
@@ -167,12 +167,20 @@
                             <v-col cols="12" sm="6" md="4">
                                 <v-switch
                                     :disabled="deshabilitarEdicionCamposABMEncabezado"
+                                    v-model="trabajo_confirmado"
+                                    color="success"
+                                    label="Trabajo confirmado?"
+                                ></v-switch>
+                            </v-col>
+                            <v-col cols="12" sm="6" md="4">
+                                <v-switch
+                                    :disabled="deshabilitarEdicionCamposABMEncabezado"
                                     v-model="trabajo_realizado"
                                     color="success"
                                     label="Trabajo realizado?"
                                 ></v-switch>
                             </v-col>
-                            <v-col cols="12" sm="6" md="4">
+                            <!--v-col cols="12" sm="6" md="4">
                                 <v-select
                                     v-model="trabajo_linea.unidad_de_trabajo.id"
                                     :disabled="deshabilitarEdicionCamposABMEncabezado"
@@ -183,10 +191,10 @@
                                     label="Unidad de Trabajo"
                                     return-object
                                     :rules="unidad_de_trabajoRules"
-                                    required
+                                    
                                 ></v-select>
-                            </v-col>
-                            <v-col cols="12" sm="6" md="4">
+                            </v-col-->
+                            <!--v-col cols="12" sm="6" md="4">
                                 <v-text-field v-my-directive
                                     v-model="trabajo_linea.cantidad_unidades_trabajo"
                                     :disabled="deshabilitarEdicionCamposABMEncabezado"
@@ -196,7 +204,7 @@
                                     label="Cantidad"
                                     :suffix="sufijo_cant"
                                 ></v-text-field>  
-                            </v-col>
+                            </v-col-->
                             <v-col cols="12" sm="6" md="4">
                                 <v-text-field
                                     :disabled="deshabilitarEdicionCamposABMEncabezado"
@@ -206,33 +214,6 @@
                                     type="number"
                                     min="0"
                                     prefix="$"
-                                ></v-text-field>  
-                            </v-col>
-                            <v-col cols="12" sm="6" md="4">
-                                <v-text-field
-                                    :disabled="deshabilitarEdicionCamposABMEncabezado"
-                                    v-model="trabajo_linea.nro_de_remito"
-                                    counter="15"
-                                    maxlength="15"
-                                    label="Nro de Remito"
-                                ></v-text-field>
-                            </v-col>
-                            <v-col cols="12" sm="6" md="4">
-                                <v-text-field
-                                    :disabled="deshabilitarEdicionCamposABMEncabezado"
-                                    v-model="trabajo_linea.persona_que_autoriza"
-                                    counter="80"
-                                    maxlength="80"
-                                    label="Persona que autoriza"
-                                ></v-text-field>  
-                            </v-col>
-                            <v-col cols="12" sm="6" md="4">
-                                <v-text-field
-                                    :disabled="deshabilitarEdicionCamposABMEncabezado"
-                                    v-model="trabajo_linea.persona_que_supervisa"
-                                    counter="80"
-                                    maxlength="80"
-                                    label="Persona que supervisa"
                                 ></v-text-field>  
                             </v-col>
                             <v-col cols="12" sm="12" md="12">
@@ -252,6 +233,7 @@
                             class="ma-2"
                             color="primary"
                             @click="validate"
+                            :disabled="loading"
                         >
                             <v-icon
                             start
@@ -259,10 +241,12 @@
                             ></v-icon>
                             {{ botonABM }}  
                         </v-btn>
+
                         <v-btn
                             class="ma-2"
                             color="grey"
                             @click="dialog = false"
+                            :disabled="loading"
                         >
                             <v-icon
                             start
@@ -270,6 +254,13 @@
                             ></v-icon>
                             Cerrar  
                         </v-btn>
+
+                        <v-progress-circular
+                        indeterminate
+                        color="amber"
+                        v-show="loading"
+                        ></v-progress-circular>
+
                     </v-form>
 
                 </v-container>
@@ -291,11 +282,14 @@
   import router from "@/router";
   import { isProxy, toRaw } from 'vue';
 
-  const { ENDPOINT_PATH_API, token, headersAxios, trabajo_encabezado_id, user_id } = useData();
+  const { token, headersAxios, trabajo_encabezado_id, user_id } = useData();
+  const ENDPOINT_PATH_API = ref(import.meta.env.VITE_ENDPOINT_PATH+'api/')
   const error = ref(false);
   const mensaje = ref(null);
+  const loading = ref(false)
   let dialog = ref(false)
   let trabajo_linea = ref(null)
+  let trabajo_confirmado = ref(false)
   let trabajo_realizado = ref(false)
   let trabajo_linea_id = ref(null)
   let botonABM = ref(null)
@@ -350,12 +344,30 @@
 
   //Rules de los Campos
   let validServicio = ref(true);
+
+
   const maquinaRules = [
-    v => !!v || 'Es requerido'
-  ];
-  const tipo_de_trabajoRules = [
-    v => !!v || 'Es requerido'
-  ];
+        value => {
+            if (!value && (accionABM.value != 'B')) {
+                return 'Maquina es requerido'
+            }
+            else {
+                return true
+            }
+        }
+    ]
+
+    const tipo_de_trabajoRules = [
+        value => {
+            if (!value && (accionABM.value != 'B')) {
+                return 'Tipo de Trabajo es requerido'
+            }
+            else {
+                return true
+            }
+        }
+    ]
+
   const fecha_inicioRules = [
     v => !!v || 'Es requerido'
   ];
@@ -402,6 +414,8 @@
   //Envio el Formulario
   async function enviarFormServicio() {
 
+    loading.value = true
+    /*
     let tipo_de_trabajo_id = trabajo_linea.value.tipo_de_trabajo.id
     if (typeof(tipo_de_trabajo_id) == 'object') {
       tipo_de_trabajo_id = tipo_de_trabajo_id.id
@@ -411,6 +425,11 @@
     if (typeof(unidad_de_trabajo_id) == 'object') {
       unidad_de_trabajo_id = unidad_de_trabajo_id.id
     }
+    */
+
+    let trabajo_confirmado_sino = tf_a_sino(trabajo_confirmado.value)
+    let trabajo_realizado_sino = tf_a_sino(trabajo_realizado.value)
+    console.log(trabajo_realizado_sino)
 
     
     //construjo el json a enviar a laravel
@@ -420,16 +439,14 @@
       lugar_de_trabajo: trabajo_linea.value.lugar_de_trabajo,
       fecha_inicio: trabajo_linea.value.fecha_inicio_f,
       fecha_fin: trabajo_linea.value.fecha_fin_f,
-      tipo_de_trabajo_id: tipo_de_trabajo_id,
-      unidad_de_trabajo_id: unidad_de_trabajo_id,
+      tipo_de_trabajo_id: trabajo_linea.value.tipo_de_trabajo.id,
+      //unidad_de_trabajo_id: unidad_de_trabajo_id,
       cantidad_unidades_trabajo: trabajo_linea.value.cantidad_unidades_trabajo,
       importe: trabajo_linea.value.importe,
-      nro_de_remito: trabajo_linea.value.nro_de_remito,
-      persona_que_autoriza: trabajo_linea.value.persona_que_autoriza,
-      persona_que_supervisa: trabajo_linea.value.persona_que_supervisa,
       observaciones: trabajo_linea.value.observaciones,
       user_id: user_id.value,
-      trabajo_realizado: tf_a_sino(trabajo_linea.value.trabajo_realizado)
+      trabajo_confirmado: trabajo_confirmado_sino,
+      trabajo_realizado: trabajo_realizado_sino,
     });
     
     let resultadoGuardar = null
@@ -459,6 +476,7 @@
     listaLineas.value = body['data'];
 
     getTime()
+    loading.value = false
   }
 
   function ABMLinea(accion, linea) {
@@ -482,12 +500,10 @@
             },
             cantidad_unidades_trabajo: null,
             importe: null,
-            nro_de_remito: null,
-            persona_que_autoriza: null,
-            persona_que_supervisa: null,
             observaciones: null,
             user_id: user_id.value
         }
+        trabajo_confirmado.value = false
         trabajo_realizado.value = false
 
         botonABM.value = 'Insertar';
@@ -515,17 +531,33 @@
     }
     if (accion == 'M') {
         botonABM.value = 'Modificar';
-        trabajo_linea.value = linea
-        trabajo_realizado.value = sino_a_tf(trabajo_linea.value.trabajo_realizado)
-        trabajo_linea_id.value = trabajo_linea.value.id        
         deshabilitarEdicionCamposABMEncabezado.value = false       
     }
     if (accion == 'B') {
-            botonABM.value = 'Eliminar';     
-            trabajo_linea.value = linea
-            trabajo_realizado.value = sino_a_tf(trabajo_linea.value.trabajo_realizado)
-            trabajo_linea_id.value = trabajo_linea.value.id   
+            botonABM.value = 'Eliminar';  
             deshabilitarEdicionCamposABMEncabezado.value = true       
+    }
+    if (accion == 'M' || accion == 'B') {
+        
+        trabajo_linea.value = linea
+        if (trabajo_linea.value.maquina === null) {
+            trabajo_linea.value.maquina = {
+                id: null
+            }
+        }
+        if (trabajo_linea.value.unidad_de_trabajo === null) {
+            trabajo_linea.value.unidad_de_trabajo = {
+                id: null
+            }
+        }
+        if (trabajo_linea.value.tipo_de_trabajo === null) {
+            trabajo_linea.value.tipo_de_trabajo = {
+                id: null
+            }
+        }
+        trabajo_confirmado.value = sino_a_tf(trabajo_linea.value.trabajo_confirmado)
+        trabajo_realizado.value = sino_a_tf(trabajo_linea.value.trabajo_realizado)
+        trabajo_linea_id.value = trabajo_linea.value.id        
     }
   }
 
@@ -535,6 +567,8 @@
   }
 
   function tf_a_sino(tf) {
+    console.log('tf')
+    console.log(tf)
     return tf ? 'SI' : 'NO'
   }
 
@@ -564,3 +598,12 @@ const vMyDirective = {
 
 </script>
 
+
+<style scoped>
+.norealizado {
+  background-color: #ffbdc3;
+}
+.realizado {
+  background-color: #c4ffbd;
+}
+</style>

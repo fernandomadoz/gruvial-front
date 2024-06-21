@@ -1,24 +1,18 @@
 <template>
-  
+      <v-text-field
+        v-model="criterio"
+        label="criterio de búsqueda"
+      ></v-text-field> 
+      
     <v-toolbar color="yellow">
 
       <v-toolbar-title>
-        Trabajos
+        Compras | Gastos | Inversiones
       </v-toolbar-title>
 
-      <v-autocomplete
-        v-model="cliente_id"
-        :items="clientes"
-        item-title="detalle_select"
-        item-value="id"
-        class="lg-12"
-        hide-no-data
-        hide-details
-        label="De que cliente quieres buscar?"
-      ></v-autocomplete>
 
       <!--v-btn icon="mdi-magnify"></v-btn-->
-      <v-btn icon="mdi-plus" @click="irATrabajo(-1)"></v-btn>
+      <v-btn icon="mdi-plus" @click="irACompra(-1)"></v-btn>
 
     </v-toolbar>
   
@@ -34,35 +28,41 @@
             <th class="text-left" @click="changeOrder('id')">
               ID
             </th>
-            <th class="text-left" @click="changeOrder('cliente')">
-              Cliente
+            <th class="text-left" @click="changeOrder('proveedor')">
+              Proveedor
             </th>
-            <th class="text-left" @click="changeOrder('fecha_inicio')">
-              Fecha de Inicio
+            <th class="text-left" @click="changeOrder('detalle')">
+              Detalle
+            </th>
+            <th class="text-left" @click="changeOrder('plan_de_cuenta')">
+              Clasificación
+            </th>
+            <th class="text-left" @click="changeOrder('fecha_de_compra')">
+              Fecha de Compra
             </th>
             <th class="text-left" @click="changeOrder('updated_at')">
               Ultima Actualizacion
             </th>
+            <th class="text-right" @click="changeOrder('mensual')">
+              Es Mensual
+            </th>
             <th class="text-right" @click="changeOrder('importe')">
               Importe
             </th>
-            <th class="text-right" @click="changeOrder('facturado')">
+            <!--th class="text-right" @click="changeOrder('facturado')">
               Facturado
             </th>
             <th class="text-right" @click="changeOrder('cobrado')">
-              Cobrado
-            </th>
+              Pagado
+            </th-->
             <th class="text-right" @click="changeOrder('deuda')">
               Deuda
-            </th>
-            <th class="text-right" @click="changeOrder('cant_trabajos_realizados_que_faltan')">
-              Cant Servicios que faltan realizar
             </th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="loading" >
-            <td colspan="10">
+            <td colspan="12">
               <v-progress-circular
                     indeterminate
                     color="amber"
@@ -70,9 +70,9 @@
             </td>
           </tr>
           <tr
-            v-for="item in listaTrabajos"
+            v-for="item in listaCompras"
             :key="item.id"
-            v-bind:class="{ nopagado: !item.fecha_de_cancelacion && item.deuda > 0, pagado: !item.fecha_de_cancelacion && item.deuda == 0 && item.cobrado, cancelado: item.fecha_de_cancelacion, encero: item.importe == 0 && item.deuda == 0, serviciosporrealizar: item.cant_trabajos_realizados_que_faltan > 0 }"
+            v-bind:class="{ nopagado: item.deuda > 0, pagado: item.deuda == 0 && item.cobrado > 0 }"
             v-show="!loading"
           >
             <td>
@@ -80,23 +80,25 @@
               size="small"
                 icon="mdi-pencil"
                 color="yellow"
-                @click="irATrabajo(item.id)"
+                @click="irACompra(item.id)"
               ></v-btn> 
               
             </td>
             <td>{{ item.id }}</td>
-            <td>{{ item.cliente }}</td>
-            <td>{{ item.fecha_inicio_format }}</td>
+            <td>{{ item.proveedor }}</td>
+            <td>{{ item.detalle }}</td>
+            <td>{{ item.plan_de_cuenta }}</td>
+            <td>{{ item.fecha_de_compra_format }}</td>
             <td>{{ item.ultima_actualizacion }}</td>
+            <td>{{ item.mensual }}</td>
             <td class="text-right">$ {{  Number(item.importe).toLocaleString("es-AR", 'ARS') }}</td>
-            <td class="text-right">$ {{  Number(item.facturado).toLocaleString("es-AR", 'ARS') }}</td>
-            <td class="text-right">$ {{  Number(item.cobrado).toLocaleString("es-AR", 'ARS') }}</td>
+            <!--td class="text-right">$ {{  Number(item.facturado).toLocaleString("es-AR", 'ARS') }}</td>
+            <td class="text-right">$ {{  Number(item.pagado).toLocaleString("es-AR", 'ARS') }}</td-->
             <td class="text-right">$ {{  Number(item.deuda).toLocaleString("es-AR", 'ARS') }}</td>
-            <td class="text-right">{{ item.cant_trabajos_realizados_que_faltan }}</td>
           </tr>
         </tbody>
       </v-table>
-  
+      
       <!--PAGINADOR-->
       <v-row>
         <v-col cols="12" sm="12" md="12">
@@ -109,6 +111,7 @@
         </v-col>
       </v-row>
       <!--PAGINADOR-->
+ 
 
 </template>
 
@@ -124,22 +127,22 @@
   //console.log(token);
   const error = ref(false);
   const mensajeError = ref('')
-  const cliente_id = ref('')
+  const criterio = ref(null)
   const page = ref(1)
-  const sortBy = ref('t.updated_at')
+  const sortBy = ref('updated_at')
   const orderDirection = ref('desc')
-  const listaTrabajos = ref()
+  const listaCompras = ref()
   const loading = ref(false)
   const cant_paginas = ref(1)
 
   
   onMounted(() => {
-    traerTrabajos()  
+    traerCompras()  
   })
 
   //Traigo CLIENTES
-  let body_clientes = await axios.get(ENDPOINT_PATH_API.value + "cliente", {headers: headersAxios.value[0]})
-  let clientes = ref(body_clientes['data'])
+  let body_proveedores = await axios.get(ENDPOINT_PATH_API.value + "proveedor", {headers: headersAxios.value[0]})
+  let proveedores = ref(body_proveedores['data'])
 
   /*
   const convertir = (valor) => {
@@ -155,32 +158,37 @@
   };
   */
           
-    const irATrabajo = (id) => {
-        router.push("/trabajo/"+id);
+    const irACompra = (id) => {
+        router.push("/compra/"+id);
 
       }
 
-    const traerTrabajos = async () => {
-      loading.value=true
+    const traerCompras = async () => {
       //console.log(page)
+      loading.value = true
       let jsonCliente = JSON.stringify({ 
           firma_id: firma_id.value,
           page: page.value,
-          cliente_id: cliente_id.value,
+          criterio: criterio.value,
           orderBy: sortBy.value,
           orderDirection: orderDirection.value
       });
 
-      let body = await axios.post(ENDPOINT_PATH_API.value + "trabajo-encabezado-listar", jsonCliente, {headers: headersAxios.value[0]});
+      let body = await axios.post(ENDPOINT_PATH_API.value + "compra-encabezado-listar", jsonCliente, {headers: headersAxios.value[0]});
       //console.log(body['data'])
       
-      listaTrabajos.value = body['data']['filas']
-      cant_paginas.value = body['data']['cant_paginas']      
+      listaCompras.value = body['data']['filas']
+      cant_paginas.value = body['data']['cant_paginas']
       loading.value=false
+
 
       
     }
 
+    const changePage = (inc) => {
+      page.value = page.value + inc
+      traerCompras()
+    }
 
     const changeOrder = (field) => {
       //console.log(sortBy.value)
@@ -192,23 +200,24 @@
       else {
         orderDirection.value = orderDirection.value == 'asc' ? 'desc' : 'asc'
       }
-      traerTrabajos()
+      traerCompras()
     } 
     
     watch(
-        () => cliente_id.value,
+        () => criterio.value,
         (newValue, oldValue) => {
           page.value = 1
-          traerTrabajos()
+          traerCompras()
         }
     )   
 
+ 
     watch(
         () => page.value,
         (newValue, oldValue) => {
-          traerTrabajos()
+          traerCompras()
         }
-    ) 
+    )  
 
 function facturado_cobrado(facturado, cobrado) {
   var res = facturado-cobrado
@@ -225,17 +234,5 @@ function facturado_cobrado(facturado, cobrado) {
 }
 .pagado {
   background-color: #c4ffbd;
-}
-.encero {
-  background-color: #ffffff;
-}
-
-.serviciosporrealizar {
-  background-color: #fad531;
-}
-
-.cancelado {
-  background-color: #666;
-  color: white;
 }
 </style>

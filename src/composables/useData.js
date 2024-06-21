@@ -6,7 +6,7 @@ import { useDataStore } from '../stores/DataStore';
 export const useData = () => {
 
     const DataStore = useDataStore();
-    const {ENDPOINT_PATH_API, isLogged, user, token, firma_id, firmas, headersAxios, user_id, mensajeStore, trabajo_encabezado_id } = storeToRefs(DataStore);
+    const {isLogged, user, token, firma_id, firmas, headersAxios, headersAxiosFiles, user_id, mensajeStore, trabajo_encabezado_id, compra_encabezado_id, getRolDeUsusarioId, getOpcionesMenuPrincipal, getFirmasPorUsuario, getPermisosPorUsuario, getNotificacionesPorUsuario } = storeToRefs(DataStore);
 
     const setearFirma = (id) => {
         DataStore.setearFirma(id);
@@ -23,6 +23,15 @@ export const useData = () => {
     const setearTrabajoEncabezadoId = (id) => {
         DataStore.setearTrabajoEncabezadoId(id);
     }
+
+    const setearCompraEncabezadoId = (id) => {
+        DataStore.setearCompraEncabezadoId(id);
+    }
+
+    const setearRolDeUsusarioId = (id) => {
+        DataStore.setearRolDeUsusarioId(id);
+    }
+    
     
     
     
@@ -33,7 +42,6 @@ export const useData = () => {
    
 
     return {
-        ENDPOINT_PATH_API,
         isLogged, 
         user, 
         token, 
@@ -42,10 +50,19 @@ export const useData = () => {
         mensajeStore,
         firmas,
         trabajo_encabezado_id,
+        compra_encabezado_id,
         headersAxios,
+        headersAxiosFiles,
+        getRolDeUsusarioId,
+        getOpcionesMenuPrincipal,
+        getFirmasPorUsuario,
+        getPermisosPorUsuario,
+        getNotificacionesPorUsuario,
         setearUser,
         setearFirma,
         setearMensajeStore,
-        setearTrabajoEncabezadoId
+        setearTrabajoEncabezadoId,
+        setearCompraEncabezadoId,
+        setearRolDeUsusarioId
     }
 } 

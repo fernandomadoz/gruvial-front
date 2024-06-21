@@ -94,6 +94,7 @@
                             class="ma-2"
                             color="primary"
                             @click="validate"
+                            :disabled="loading"
                         >
                             <v-icon
                             start
@@ -105,6 +106,7 @@
                             class="ma-2"
                             color="grey"
                             @click="dialog = false"
+                            :disabled="loading"
                         >
                             <v-icon
                             start
@@ -112,6 +114,13 @@
                             ></v-icon>
                             Cerrar  
                         </v-btn>
+                        
+                        <v-progress-circular
+                        indeterminate
+                        color="amber"
+                        v-show="loading"
+                        ></v-progress-circular>
+
                     </v-form>
 
                 </v-container>
@@ -133,9 +142,11 @@
   import router from "@/router";
   import { isProxy, toRaw } from 'vue';
 
-  const { ENDPOINT_PATH_API, token, headersAxios, trabajo_encabezado_id, user_id } = useData();
+  const { token, headersAxios, trabajo_encabezado_id, user_id } = useData();
+  const ENDPOINT_PATH_API = ref(import.meta.env.VITE_ENDPOINT_PATH+'api/')
   const error = ref(false);
   const mensaje = ref(null);
+  const loading = ref(false)
   let dialog = ref(false)
   let nota = ref(null)
   let nota_id = ref(null)
@@ -175,6 +186,7 @@
   //Envio el Formulario
   async function enviarFormNota() {
 
+    loading.value = true
 
     //construjo el json a enviar a laravel
     json = JSON.stringify({ 
@@ -207,6 +219,7 @@
     listaNotas.value = body['data'];
 
     getTime()
+    loading.value = false
   }
 
   function ABMLinea(accion, item) {

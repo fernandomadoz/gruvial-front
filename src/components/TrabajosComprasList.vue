@@ -23,7 +23,6 @@
                     <th class="text-left">Accion</th>
                     <th class="text-left">id</th>
                     <th class="text-left">Cuenta de origen</th>
-                    <th class="text-left">Lugar de compra</th>
                     <th class="text-left">Fecha de Compra</th>
                     <th class="text-left">Descripcion</th>
                     <th class="text-left">Importe de compra</th>
@@ -55,7 +54,7 @@
                     </td>
                     <td>{{ (item.id) }}</td>
                     <td>{{ (item.cuenta_de_origen.numero_de_cuenta) }} {{ (item.cuenta_de_origen.banco.nombre_del_banco) }} ({{ (item.cuenta_de_origen.firma.firma) }})</td>
-                    <td>{{ (item.lugar_de_compra) }}</td>
+                    <td>{{ (item.proveedor.nombre_o_razon_social) }})</td>
                     <td>{{ item.fecha_de_compra }}</td>
                     <td>{{ item.descripcion_de_gasto }}</td>
                     <td>${{ item.importe_de_compra }}</td>
@@ -106,13 +105,16 @@
                                 ></v-autocomplete>      
                             </v-col>
                             <v-col cols="12" sm="6" md="4">
-                                <v-text-field
-                                    v-model="compra.lugar_de_compra"
+                                <v-autocomplete
+                                    v-model="compra.proveedor.id"
+                                    :items="proveedores"
                                     :disabled="deshabilitarEdicionCamposABMCompras"
-                                    maxlength="80"
-                                    counter="80"
-                                    label="Lugar de compra"
-                                ></v-text-field>      
+                                    item-title="nombre_o_razon_social"
+                                    item-value="id"
+                                    dense
+                                    filled
+                                    label="Proveedor *"
+                                ></v-autocomplete>      
                             </v-col>
                             <v-col cols="12" sm="6" md="4">
                                 <v-text-field
@@ -167,6 +169,8 @@
                                     item-title="tipo_de_factura"
                                     item-value="id"
                                     label="Tipo de Factura"
+                                    :rules="tipo_de_facturaRules"
+                                    required
                                     return-object
                                 ></v-select>     
                             </v-col>
@@ -196,6 +200,7 @@
                             class="ma-2"
                             color="primary"
                             @click="validate"
+                            :disabled="loading"
                         >
                             <v-icon
                             start
@@ -207,6 +212,7 @@
                             class="ma-2"
                             color="grey"
                             @click="dialog = false"
+                            :disabled="loading"
                         >
                             <v-icon
                             start
@@ -214,6 +220,13 @@
                             ></v-icon>
                             Cerrar  
                         </v-btn>
+                        
+                        <v-progress-circular
+                        indeterminate
+                        color="amber"
+                        v-show="loading"
+                        ></v-progress-circular>
+                        
                     </v-form>
 
                 </v-container>
@@ -235,9 +248,11 @@
   import router from "@/router";
   import { isProxy, toRaw } from 'vue';
 
-  const { ENDPOINT_PATH_API, token, headersAxios, trabajo_encabezado_id, user_id } = useData();
+  const { token, headersAxios, trabajo_encabezado_id, user_id, firma_id } = useData();
+  const ENDPOINT_PATH_API = ref(import.meta.env.VITE_ENDPOINT_PATH+'api/')
   const error = ref(false);
   const mensaje = ref(null);
+  const loading = ref(false)
   let dialog = ref(false)
   let compra = ref(null)
   let compra_id = ref(null)
@@ -266,10 +281,14 @@
   const body_tipos_de_facturas = await axios.get(ENDPOINT_PATH_API.value + "tipo-de-factura", {headers: headersAxios.value[0]})
   let tipos_de_facturas = body_tipos_de_facturas['data']
 
+  //Traigo proveedores
+  const body_proveedores = await axios.get(ENDPOINT_PATH_API.value + "proveedor", {headers: headersAxios.value[0]})
+  let proveedores = body_proveedores['data']
+
   // ----- Inicio: Validación y envio del Formulario Encabezado
 
   //Rules de los Campos
-  //let validCompra = ref(true);
+  let validCompra = ref(true);
   const cuentaRules = [
     v => !!v || 'Es requerido'
   ];
@@ -285,7 +304,10 @@
   const descripcion_de_gastoRules = [
     v => !!v || 'Es requerido'
   ];
-
+  const tipo_de_facturaRules = [
+    v => !!v || 'Es requerido'
+  ];
+  
   //Valido el Formulario
   async function validate () {
     await formCompras.value.validate()
@@ -297,20 +319,28 @@
   //Envio el Formulario
   async function enviarFormCompra() {
 
+    loading.value = true
+
     let tipo_de_factura_id = compra.value.tipo_de_factura.id
     if (typeof(tipo_de_factura_id) == 'object') {
       tipo_de_factura_id = tipo_de_factura_id.id
     }
 
+    let proveedor_id = compra.value.proveedor.id
+    if (typeof(proveedor_id) == 'object') {
+        proveedor_id = proveedor_id.id
+    }
+
     //construjo el json a enviar a laravel
     json = JSON.stringify({ 
       trabajo_encabezado_id: trabajo_encabezado_id.value,
+      firma_id: firma_id.value,
       cuenta_de_origen_id: compra.value.cuenta_de_origen.id,
-      lugar_de_compra: compra.value.lugar_de_compra,
       fecha_de_compra: compra.value.fecha_de_compra_f,
       descripcion_de_gasto: compra.value.descripcion_de_gasto,
       importe_de_compra: compra.value.importe_de_compra,
       importe_cancelado: compra.value.importe_cancelado,
+      proveedor_id: proveedor_id,
       tipo_de_factura_id: tipo_de_factura_id,
       nro_de_factura: compra.value.nro_de_factura,
       observaciones: compra.value.observaciones,
@@ -343,6 +373,7 @@
     listaCompras.value = body['data'];
 
     getTime()
+    loading.value = false
   }
 
   function ABMLinea(accion, item) {
@@ -355,12 +386,14 @@
             cuenta_de_origen: {
                 id: null
             },
-            lugar_de_compra: null,
             fecha_de_compra: null,
             descripcion_de_gasto: null,
             importe_de_compra: null,
             importe_cancelado: null,
             tipo_de_factura: {
+                id: null
+            },
+            proveedor: {
                 id: null
             },
             nro_de_factura: null,

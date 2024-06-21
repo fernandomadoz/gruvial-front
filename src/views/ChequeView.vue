@@ -2,27 +2,25 @@
   <v-main>
     <v-container>
         <suspense timeout="0">
-            <Trabajo  :tab="props.tab" :trabajo_id="props.trabajo_id"/>
+            <Cheque :accion="props.accion" :cheque_id="props.cheque_id" />
         </suspense>
     </v-container>
   </v-main>
 </template>
 
 <script setup>
-import { defineProps } from 'vue';
 
 // Components
-import Trabajo from '../components/Trabajo.vue';
-
+import Cheque from '../components/Cheque.vue';
 
 const props = defineProps({
-  trabajo_id: {
+    accion: {
+          type: String,
+          default: 'A'
+      },
+      cheque_id: {
           type: Number,
           default: null
-    },
-  tab: {
-        type: String,
-        default: null
-    },
+      }
   })
 </script>

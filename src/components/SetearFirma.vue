@@ -1,11 +1,10 @@
 <template>
 
-
 <div class="d-flex align-center flex-column bg-grey-lighten-4 pa-6">
-    <div class="text-subtitle-2"><h2>Seleccion una opción</h2></div>
+    <div class="text-subtitle-2"><h2>Selecciona una empresa</h2></div>
   
     <div
-      v-for="firma in firmas"
+      v-for="firma in getFirmasPorUsuario"
       :key="firma"
     >
           <v-card
@@ -38,13 +37,15 @@
   import Cookies from "js-cookie";
   import { useData } from '../composables/useData';
   
-  const { firmas, setearFirma } = useData();
+  const { getFirmasPorUsuario, setearFirma } = useData();
 
 
   const setearFirmaRedirigir = (id) => {
         setearFirma(id);
         Cookies.set("firma_id", id);
-        router.push("/trabajos-list");
+        router.push("/centro-de-notificaciones");
+        //router.push("/trabajos-list");
+        
 
       }
 

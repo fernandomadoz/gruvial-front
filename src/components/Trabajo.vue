@@ -1,6 +1,23 @@
 <template>
+  
+    <v-card v-bind:title="estado" v-bind:class="{ nopagado: !pagado, pagado: pagado  }" subtitle="" style="margin-bottom: 20px;"></v-card>
     <v-card v-bind:title="titulo" subtitle=""></v-card>
 
+    <div class="d-flex my-2 ">
+      <v-row>
+        <v-col cols="12" sm="6" md="4">
+          <v-chip class="w-100" size="x-large" label prepend-icon="mdi-hammer-wrench">Servicios Realizados: <span class="text-blue pl-3">${{ Number(importeLineas).toLocaleString("es-AR", 'ARS') }}</span></v-chip>
+        </v-col>
+        <v-col cols="12" sm="6" md="4">
+          <v-chip class="w-100" size="x-large" label prepend-icon="mdi-text-box-outline">Total Facturado: <span class="text-blue pl-3">${{ Number(importeFacturas).toLocaleString("es-AR", 'ARS') }}</span></v-chip>
+        </v-col>
+        <v-col cols="12" sm="6" md="4">
+          <v-chip class="w-100" size="x-large" label prepend-icon="mdi-currency-usd">Total Cobrado: <span class="text-blue pl-3">${{ Number(importeCobros).toLocaleString("es-AR", 'ARS') }}</span></v-chip>
+        </v-col>
+      </v-row>
+    </div>
+    
+  
     <v-card>
       <v-tabs
         v-model="tab"
@@ -11,7 +28,10 @@
         <v-tab value="Gastos" v-if="trabajo_encabezado_id!=-1">Compras o Gastos</v-tab>
         <v-tab value="Cobros" v-if="trabajo_encabezado_id!=-1">Cobros</v-tab>
         <v-tab value="Facturas" v-if="trabajo_encabezado_id!=-1">Facturas</v-tab>
+        <v-tab value="Remitos" v-if="trabajo_encabezado_id!=-1">Remitos</v-tab>
         <v-tab value="Notas" v-if="trabajo_encabezado_id!=-1">Notas</v-tab>
+        <v-tab value="Documentos" v-if="trabajo_encabezado_id!=-1">Documentos</v-tab>
+        <v-tab value="Cotizaciones" v-if="trabajo_encabezado_id!=-1">Cotizaciones</v-tab>
       </v-tabs>
 
       <v-card-text>
@@ -71,20 +91,33 @@
                   ></v-switch>
                 </v-col>
                 
+                
+                <v-col cols="12" sm="6" md="4" v-show="nuevoCliente">
+                  <v-autocomplete
+                    v-model="tipo_de_cliente_id"
+                    :items="tipos_de_clientes"
+                    :rules="tipo_de_clienteRules"
+                    item-title="tipo_de_cliente"
+                    item-value="id"
+                    dense
+                    filled
+                    label="Tipo de Cliente *"
+                  ></v-autocomplete> 
+                </v-col>
+
                 <v-col cols="12" sm="6" md="4" v-show="nuevoCliente">
                   <v-text-field
                     v-model="nombre_o_razon_social"
                     :rules="nombre_o_razon_socialRules"
                     counter="80"
                     clearable
-                    :label="es_consumidor_final ? 'Familia' : 'Nombre o Razon Social'"
+                    label="Nombre o Razon Social *"
                   ></v-text-field>           
                 </v-col>
                 
                 <v-col cols="12" sm="6" md="4" v-show="nuevoCliente">
                   <v-text-field
                     v-model="telefonos"
-                    :rules="telefonosRules"
                     counter="80"
                     clearable
                     label="Telefonos"
@@ -93,8 +126,7 @@
                 
                 <v-col cols="12" sm="6" md="4" v-show="nuevoCliente && !es_consumidor_final">
                   <v-text-field
-                    v-model="CUIT_o_CUIL"
-                    :rules="CUIT_o_CUILRules"
+                    v-model="cuit_o_cuil"
                     counter="13"
                     clearable
                     label="CUIT o CUIL"
@@ -104,7 +136,6 @@
                 <v-col cols="12" sm="6" md="4" v-show="nuevoCliente && !es_consumidor_final">
                   <v-text-field
                     v-model="email"
-                    :rules="emailRules"
                     label="E-mail"
                     required
                   ></v-text-field> 
@@ -123,15 +154,30 @@
                   ></v-autocomplete> 
                 </v-col>
                 
-                <v-col cols="12" sm="12" md="8" v-show="nuevoCliente">
+                <v-col cols="12" sm="6" md="4" v-show="nuevoCliente">
                   <v-text-field
                     v-model="direccion"
-                    :rules="direccionRules"
                     counter="200"
                     clearable
                     label="Direccion"
                   ></v-text-field>       
                 </v-col>
+                
+                
+                <v-col cols="12" sm="6" md="4" v-show="nuevoCliente">
+                  <v-autocomplete
+                    v-model="condicion_iva_id"
+                    :items="condiciones_iva"
+                    item-title="condicion_iva"
+                    item-value="id"
+                    dense
+                    filled
+                    label="Condicion IVA"
+                  ></v-autocomplete> 
+                </v-col>
+
+                
+
               </v-row>
 
               <v-row>
@@ -158,6 +204,7 @@
                 class="ma-2"
                 color="primary"
                 @click="validate"
+                :disabled="loading"
               >
                 <v-icon
                   start
@@ -165,6 +212,53 @@
                 ></v-icon>
                 Guardar  
               </v-btn>
+
+              <v-progress-circular
+                indeterminate
+                color="amber"
+                v-show="loading"
+              ></v-progress-circular>
+              <hr>
+
+              <v-row v-if="trabajo_encabezado_id != -1">
+                <v-col cols="12" sm="6" md="4">
+                  <v-switch
+                    v-model="trabajo_cancelado"
+                    label="Cancelar trabajo"
+                    color="error"
+                  ></v-switch>
+                </v-col>
+                <v-col cols="12" sm="6" md="8" v-show="trabajo_cancelado">
+                  <v-textarea
+                    label="observaciones de cancelación"
+                    v-model="observaciones_de_cancelacion"
+                  ></v-textarea>
+                </v-col>
+              </v-row>
+
+              <v-row v-show="trabajo_cancelado && !fecha_de_cancelacion">
+                <v-col cols="12" sm="12" md="12" v-show="trabajo_cancelado">
+                  `<v-btn
+                    class="ma-2"
+                    color="primary"
+                    @click="validate"
+                    :disabled="loading"
+                  >
+                    <v-icon
+                      start
+                      icon="mdi-content-save"
+                    ></v-icon>
+                    Guardar Cancelación 
+                  </v-btn>`
+
+                  <v-progress-circular
+                    indeterminate
+                    color="amber"
+                    v-show="loading"
+                  ></v-progress-circular>
+                  
+                </v-col>
+              </v-row>
             </v-form>
           </v-window-item>
           
@@ -185,8 +279,20 @@
             <TrabajosFacturasList />
           </v-window-item>
 
+          <v-window-item value="Remitos" v-if="trabajo_encabezado_id!=-1">
+            <TrabajosRemitosList />
+          </v-window-item>
+
           <v-window-item value="Notas" v-if="trabajo_encabezado_id!=-1">
             <TrabajosNotasList />            
+          </v-window-item>
+
+          <v-window-item value="Documentos" v-if="trabajo_encabezado_id!=-1">
+            <TrabajosDocumentosList />            
+          </v-window-item>
+
+          <v-window-item value="Cotizaciones" v-if="trabajo_encabezado_id!=-1">
+            <TrabajosCotizacionesList />            
           </v-window-item>
 
         </v-window>
@@ -206,8 +312,8 @@
   import axios from "axios"
   import { useData } from '../composables/useData'
   import router from "../router"
-  import { defineComponent } from 'vue'
-  import { ref } from "vue"
+  import { onMounted } from 'vue'
+  import { ref, watch } from "vue"
   import "bootstrap/dist/css/bootstrap.min.css"
 
   // Components
@@ -215,18 +321,39 @@
   import TrabajosComprasList from '../components/TrabajosComprasList.vue';
   import TrabajosCobrosList from '../components/TrabajosCobrosList.vue';
   import TrabajosFacturasList from '../components/TrabajosFacturasList.vue';
+  import TrabajosRemitosList from '../components/TrabajosRemitosList.vue';
   import TrabajosNotasList from '../components/TrabajosNotasList.vue';
+  import TrabajosDocumentosList from '../components/TrabajosDocumentosList.vue';
+  import TrabajosCotizacionesList from '../components/TrabajosCotizacionesList.vue';
   
 
+  const props = defineProps({
+    trabajo_id: {
+          type: Number,
+          default: null
+      },
+    tab: {
+          type: String,
+          default: null
+      },
+  })
+  
+  onMounted(() => {
+    tab.value = props.tab ? props.tab : 'Encabezado'
+
+  })
+
   //Variables grales de Aplicacion
-  const { ENDPOINT_PATH_API, headersAxios, firmas, firma_id, user_id, setearMensajeStore, mensajeStore, trabajo_encabezado_id, setearTrabajoEncabezadoId } = useData()
+  const { headersAxios, firmas, firma_id, user_id, setearMensajeStore, mensajeStore, trabajo_encabezado_id, setearTrabajoEncabezadoId } = useData()
+  const ENDPOINT_PATH_API = ref(import.meta.env.VITE_ENDPOINT_PATH+'api/')
   let trabajo_encabezado = ref([])
   let titulo = ''
   let tab = ref('one')
   const nuevoCliente = ref(false)
+  const loading = ref(false)
 
   //Traigo firmas
-  const body_firmas = await axios.get(ENDPOINT_PATH_API.value + "firma", {headers: headersAxios.value[0]})
+  const body_firmas = await axios.get(ENDPOINT_PATH_API.value + "firma-por-usuario", {headers: headersAxios.value[0]})
   let firmas2 = body_firmas['data']
 
   //Traigo clientes
@@ -235,23 +362,42 @@
 
   //Traigo barrios
   const body_barrios = await axios.get(ENDPOINT_PATH_API.value + "barrio", {headers: headersAxios.value[0]})
-  let barrios = body_barrios['data']
+  let barrios = ref(body_barrios['data'])
+
+  //Traigo Tipos de Clientes
+  const body_tipos_de_clientes = await axios.get(ENDPOINT_PATH_API.value + "tipo-de-cliente", {headers: headersAxios.value[0]})
+  let tipos_de_clientes = ref(body_tipos_de_clientes['data'])
+
+  //Traigo Condiciones de IVA
+  const body_condiciones_iva = await axios.get(ENDPOINT_PATH_API.value + "condicion-iva", {headers: headersAxios.value[0]})
+  let condiciones_iva = ref(body_condiciones_iva['data'])
 
   //Variables trabajos_encabezados
-  setearTrabajoEncabezadoId(router.currentRoute.value.params.id)
+  //setearTrabajoEncabezadoId(router.currentRoute.value.params.id)
+  setearTrabajoEncabezadoId(props.trabajo_id)
   let firma_id_trabajo = ref(null)
   let cliente_id = ref(null)
   let fecha_inicio = ref(null)
   let observaciones = ref(null)
+  let fecha_de_cancelacion = ref(null)
+  let fecha_de_cancelacion_f = ref(null)
   let observaciones_de_cancelacion = ref(null)
   const formEncabezado = ref(null) 
   let es_consumidor_final = ref(false)
   let nombre_o_razon_social = ref(null)
-  let CUIT_o_CUIL = ref(null)
+  let cuit_o_cuil = ref(null)
   let telefonos = ref(null)
   let direccion = ref(null)
+  let tipo_de_cliente_id = ref(null)
+  let condicion_iva_id = ref(null)
   let email = ref(null)
   let barrio_id = ref(null)
+  let estado = ref(null)
+  let pagado = ref(null)
+  let importeLineas = ref(null)
+  let importeFacturas = ref(null)
+  let importeCobros = ref(null)
+  let trabajo_cancelado = ref(false)
 
   if (trabajo_encabezado_id.value == -1) {
     // Seteo valores de variables para un alta de trabajos_encabezados
@@ -269,7 +415,17 @@
     firma_id_trabajo.value = trabajo_encabezado.data.firma.id
     cliente_id.value = trabajo_encabezado.data.cliente.id
     fecha_inicio.value = trabajo_encabezado.data.fecha_inicio_f
+    fecha_de_cancelacion.value = trabajo_encabezado.data.fecha_de_cancelacion
+    observaciones_de_cancelacion.value = trabajo_encabezado.data.observaciones_de_cancelacion
     observaciones.value = trabajo_encabezado.data.observaciones
+    estado.value = trabajo_encabezado.data.estado
+    pagado.value = trabajo_encabezado.data.pagado
+    importeLineas.value = trabajo_encabezado.data.importeLineas
+    importeFacturas.value = trabajo_encabezado.data.importeFacturas
+    importeCobros.value = trabajo_encabezado.data.importeCobros
+
+    trabajo_cancelado.value = fecha_de_cancelacion.value ? true : false;
+
   }
 
 
@@ -289,8 +445,11 @@
     v => !!v || 'Fecha de Inicio es requerido'
   ];
   const nombre_o_razon_socialRules =  [
-    v => !!v || es_consumidor_final.value ? 'Familia' : 'Nombre o Razon Social'+'Es requerido',
+    v => !!v || 'Nombre o Razon Social es requerido',
     v => (v && v.length <= 80) || 'Maximo 80 caracteres',
+  ];
+  const tipo_de_clienteRules = [
+    v => !!v || 'Tipo de Cliente es requerido'
   ];
   const telefonosRules =  [
     v => (v && v.length <= 80) || 'Maximo 80 caracteres',
@@ -298,28 +457,47 @@
   const direccionRules =  [
     v => (v && v.length <= 200) || 'Maximo 200 caracteres',
   ];
-  const CUIT_o_CUILRules =  [
-    v => (v && v.length <= 13) || 'Maximo 13 caracteres',
-    v => /\b(20|23|24|27|30|33|34)(\D)?[0-9]{8}(\D)?[0-9]/g || 'CUIT debe ser valido',
-  ];
+
+  
+  let cuit_o_cuilRules = [
+      value => {
+          if (nuevoCliente.value && !es_consumidor_final.value) {
+            if (!value) {
+                return 'CUIT es requerido'
+            }
+            if (value && (value.length != 13)) {
+                return 'CUIT debe ser valido y con guiones'
+            }
+          }
+          return true
+      }
+  ]
+
   const emailRules = [
     v => (v && v.length <= 80) || 'Maximo 80 caracteres',
     v => /.+@.+\..+/.test(v) || 'E-mail must be valid',
   ];
 
   //Valido el Formulario
-  const validate = () => {
-    const resul = formEncabezado.value.validate()
-
+  async function validate() {
+    let resul = await formEncabezado.value.validate()
     // Si el formulario es valido guardo los datos
     if (valid) {
       enviarFormEncabazado()
     }
+    else {
+      console.log(valid.value)
+      console.log(resul)
+    }
 
   };
 
+
   //Envio el Formulario
   async function enviarFormEncabazado() {
+
+    loading.value = true
+
     let firma_id_trabajo_value = firma_id_trabajo.value
     if (typeof(firma_id_trabajo_value) == 'object') {
       firma_id_trabajo_value = firma_id_trabajo_value.id
@@ -332,15 +510,19 @@
         es_consumidor_final: es_consumidor_final.value,
         id: cliente_id.value,
         nombre_o_razon_social: nombre_o_razon_social.value,
-        CUIT_o_CUIL: CUIT_o_CUIL.value,
+        cuit_o_cuil: cuit_o_cuil.value,
         direccion: direccion.value,
         telefonos: telefonos.value,
         email: email.value,
         barrio_id: barrio_id.value,
+        tipo_de_cliente_id: tipo_de_cliente_id.value,
+        condicion_iva_id: condicion_iva_id.value,
       },
       fecha_inicio: fecha_inicio.value,
       user_id: user_id.value,
-      observaciones: observaciones.value
+      observaciones: observaciones.value,
+      trabajo_cancelado: trabajo_cancelado.value,
+      observaciones_de_cancelacion: observaciones_de_cancelacion.value,
     });
 
     let resultadoGuardar = null;
@@ -366,6 +548,7 @@
     nuevoCliente.value = false
     es_consumidor_final.value = false
     getTime()
+    loading.value = false
   }
 
   // ----- Fin: Validación y envio del Formulario Encabezado
@@ -377,6 +560,15 @@
   }
 
 
+  watch(
+        () => es_consumidor_final.value,
+        (newValue, oldValue) => {
+          if (newValue) {
+            tipo_de_cliente_id.value = 1
+          }         
+        }
+    )   
+
 let text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'
 </script>
 
@@ -386,5 +578,11 @@ let text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eius
 .bg-field {
   background-color: #f6f6f6;
   height: 50px;
+}
+.nopagado {
+  background-color: #ffbdc3;
+}
+.pagado {
+  background-color: #31cf5e;
 }
 </style>
