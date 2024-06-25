@@ -48,15 +48,18 @@ export const useDataStore = defineStore("DataStore", {
             let firmas = []
             let permisos = []
             let notificaciones = []
+            let reportes = []
             if (state.rol_de_usuario_id == 1) {
                 firmas = ['*']
                 permisos = ['*']
                 notificaciones = ['*'] 
+                reportes = ['*'] 
             }
             //ADM SANIBOX
             if (state.rol_de_usuario_id == 2 ) {
                 firmas = [3]
                 notificaciones = ['*'] 
+                reportes = ['administrativos'] 
             }
             //ADM GRUVIAL
             if (state.rol_de_usuario_id == 3 ) {
@@ -64,7 +67,8 @@ export const useDataStore = defineStore("DataStore", {
                 notificaciones = [
                     'trabajos', 
                     'recordatorios', 
-                ] 
+                ]
+                reportes = ['administrativos'] 
             }
             if (state.rol_de_usuario_id == 2 ||  state.rol_de_usuario_id == 3) {
                 permisos = [
@@ -86,6 +90,7 @@ export const useDataStore = defineStore("DataStore", {
                     firmas: firmas,
                     permisos: permisos,
                     notificaciones: notificaciones,
+                    reportes: reportes,
                 }
 
         },

@@ -98,7 +98,7 @@ import router from "@/router";
 
 const { user_id, headersAxios } = useData();
 
-const ENDPOINT_PATH_API = ref(import.meta.env.VITE_ENDPOINT_PATH)+'api/'
+const ENDPOINT_PATH_API = ref(import.meta.env.VITE_ENDPOINT_PATH+'api/')
 
 const form = ref(false)
 let show = ref(false)
