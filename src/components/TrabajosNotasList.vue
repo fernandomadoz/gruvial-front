@@ -178,7 +178,7 @@
   //Valido el Formulario
   async function validate () {
     await formNotas.value.validate()
-    if (validNota.value) {
+    if (validNota.value || accionABM.value == 'B') {
         enviarFormNota()
     }    
   }
@@ -200,11 +200,14 @@
       body_abm = await axios.post(ENDPOINT_PATH_API.value + "nota", json, {headers: headersAxios.value[0]})
     }
     if (accionABM.value == 'M') {
-      body_abm = await axios.put(ENDPOINT_PATH_API.value + "nota/"+nota_id.value, json, {headers: headersAxios.value[0]})
+      //body_abm = await axios.put(ENDPOINT_PATH_API.value + "nota/"+nota_id.value, json, {headers: headersAxios.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "nota-update/"+nota_id.value, json, {headers: headersAxios.value[0]})
     }  
     
     if (accionABM.value == 'B') {
-      body_abm = await axios.delete(ENDPOINT_PATH_API.value + "nota/"+nota_id.value, json, {headers: headersAxios.value[0]})
+      //body_abm = await axios.delete(ENDPOINT_PATH_API.value + "nota/"+nota_id.value, json, {headers: headersAxios.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "nota-delete/"+nota_id.value, json, {headers: headersAxios.value[0]})
+
     }      
     mensaje.value = body_abm['data'].mensaje
 

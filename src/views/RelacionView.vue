@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <v-container>
+    <v-container fluid>
         <suspense timeout="0">
             <Relacion :accion="props.accion" :relacion_id="props.relacion_id" />
         </suspense>

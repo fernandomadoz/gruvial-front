@@ -54,7 +54,7 @@
             >
               <v-row>
 
-                <v-col cols="12" sm="6" md="4">
+                <v-col cols="12" sm="6" md="4">                  
                   <v-select
                     v-model="firma_id_compra"
                     :items="firmas2"
@@ -108,27 +108,30 @@
             <v-row v-if="mostrarCombinarFirmas">  
               <v-col cols="12" sm="6" md="4">
                 <v-checkbox
+                  :disabled="firma_id_sesion==1"
                   v-model="firmasDelaCompra"
                   label="Gruvial"
-                  value=1
+                  :value=1
                   :rules="firmasDelaCompraRules"
                 ></v-checkbox>
               </v-col>
 
               <v-col cols="12" sm="6" md="4">
                 <v-checkbox
+                  :disabled="firma_id_sesion==2"
                   v-model="firmasDelaCompra"
                   label="Desagotadora"
-                  value=2
+                  :value=2
                   :rules="firmasDelaCompraRules"
                 ></v-checkbox>
               </v-col>
 
               <v-col cols="12" sm="6" md="4">
                 <v-checkbox
+                  :disabled="firma_id_sesion==3"
                   v-model="firmasDelaCompra"
                   label="Sanibox"
-                  value=3
+                  :value=3
                   :rules="firmasDelaCompraRules"
                 ></v-checkbox>
               </v-col>
@@ -648,7 +651,7 @@
                 Guardar  
               </v-btn>
               
-              <v-btn
+              <v-btn 
                 class="ma-2"
                 color="primary"
                 @click="validate('nuevo')"
@@ -811,9 +814,10 @@
   const nuevoProveedor = ref(false)
   const loading = ref(false)
   const mostrarCombinarFirmas = ref(false)
-  const firmasDelaCompra = ref([])
+  const firmasDelaCompra = ref([Number(firma_id.value)])
   const firmasCompraCombinada = ref([])
   const esCompraCombinada = ref(false)
+  const firma_id_sesion = ref(Number(firma_id.value))
 
   //Traigo firmas
   const body_firmas = await axios.get(ENDPOINT_PATH_API.value + "firma-por-usuario", {headers: headersAxios.value[0]})
@@ -1016,7 +1020,7 @@ let condicion_ivaRules = [
 let unidad_de_negocioRules = [
       value => {
           if (firma_id_compra.value == 3 && !value) {
-              return 'La Unidad de compra es requerida'
+              return 'La Unidad de Negocio es requerida'
           }
       }
   ]
@@ -1045,8 +1049,17 @@ let unidad_de_negocioRules = [
             if (!value) {
                 return 'CUIT es requerido'
             }
-            if (value && (value.length != 11)) {
-                return 'CUIT debe ser sin guiones y no mayor a 11 caracteres'
+            else {
+              if (value.length != 11) {
+                  return 'CUIT debe ser sin guiones y no mayor a 11 caracteres'
+              }
+              else {
+                if (proveedores.value.some(item => item.cuit_o_cuil === value)) {
+                    return 'Ya existe un proveedor con ese CUIT registrado, busquelo en la lista de proveedor'
+
+                }
+              }
+              
             }
           }
           
@@ -1128,10 +1141,15 @@ let unidad_de_negocioRules = [
 
   //Envio el Formulario
   async function enviarFormEncabazado() {
-    loading.value = true
-    
+    //loading.value = true
+    if (compra_personal.value) {
+      cuenta_de_origen_id.value = 21
+      tipo_de_cobro_id.value = 1
+      fecha_de_pago.value = fecha_de_factura.value
+    }
     const json = JSON.stringify({ 
       compra_encabezado_id: props.compra_encabezado_id,
+      firma_id_sesion: firma_id_sesion.value,
       firma_id: firma_id_compra.value,
       importe_de_compra: importe_de_compra.value,
       firmasDelaCompra: firmasDelaCompra.value,
@@ -1193,12 +1211,14 @@ let unidad_de_negocioRules = [
     }
     else {
       if (accionPosterior.value == 'borrar-y-volver-al-listado') {
-        const body_update = await axios.delete(ENDPOINT_PATH_API.value + "compra-encabezado/"+props.compra_encabezado_id, json, {headers: headersAxios.value[0]})
+        //const body_update = await axios.delete(ENDPOINT_PATH_API.value + "compra-encabezado/"+props.compra_encabezado_id, json, {headers: headersAxios.value[0]})
+        const body_update = await axios.post(ENDPOINT_PATH_API.value + "compra-encabezado-delete/"+props.compra_encabezado_id, json, {headers: headersAxios.value[0]})
         let compra_encabezado_update = body_update['data']
         setearMensajeStore(body_update['data'].mensaje)
       }
       else {
-        const body_update = await axios.put(ENDPOINT_PATH_API.value + "compra-encabezado/"+props.compra_encabezado_id, json, {headers: headersAxios.value[0]})
+        //const body_update = await axios.put(ENDPOINT_PATH_API.value + "compra-encabezado/"+props.compra_encabezado_id, json, {headers: headersAxios.value[0]})
+        const body_update = await axios.post(ENDPOINT_PATH_API.value + "compra-encabezado-update/"+props.compra_encabezado_id, json, {headers: headersAxios.value[0]})
         let compra_encabezado_update = body_update['data']
         proveedor_id.value = body_update['data'].compra_encabezado.proveedor.id
         setearMensajeStore(body_update['data'].mensaje)
@@ -1291,7 +1311,7 @@ let text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eius
           if (newValue == 1) {
             compra_personal.value = true
             carga_pago.value = false
-            cuenta_de_origen_id.value = null
+            cuenta_de_origen_id.value = 21
             carga_factura.value = true
             detalle.value = null
             es_mensual.value = false
@@ -1300,6 +1320,7 @@ let text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eius
           else {
             compra_personal.value = false
             carga_pago.value = true
+            cuenta_de_origen_id.value = null
           }
         }
     )   
@@ -1322,7 +1343,7 @@ let text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eius
   watch(
       () => tipo_de_factura_id.value,
       async (newValue, oldValue) => {
-        if (newValue == 3) {
+        if (newValue == 3 || newValue == 4 || newValue == 6) {
           porcentaje_de_iva.value = 0
         }
       }
@@ -1333,11 +1354,11 @@ let text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eius
         (newValue, oldValue) => {
           if (newValue == 9999) {
             mostrarCombinarFirmas.value = true
-            firmasDelaCompra.value = []
+            firmasDelaCompra.value = [Number(firma_id.value)]
           }
           else {
             mostrarCombinarFirmas.value = false
-            firmasDelaCompra.value = [newValue]
+            firmasDelaCompra.value = [Number(newValue)]
           }        
           
         }
@@ -1451,7 +1472,7 @@ let text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eius
         let texto = ''
         let cantFirmas = firmasDelaCompra.value.length
         if (cantFirmas > 1) {
-            if (accionABM.value == 'A') {
+            if (props.compra_encabezado_id == -1) {
                 let importeDividido = importe_de_compra.value/cantFirmas
                 importeDividido = importeDividido.toFixed(2)
                 texto = 'El Importe se dividira en '+cantFirmas+' y cada uno pagará: $'+Number(importeDividido).toLocaleString("es-AR", 'ARS')

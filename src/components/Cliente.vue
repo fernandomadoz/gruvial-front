@@ -236,7 +236,7 @@ console.log(cliente_id.value)
     const body_find = await axios.get(ENDPOINT_PATH_API.value + "cliente/"+cliente_id.value, {headers: headersAxios.value[0]})
     cliente = body_find['data']
     titulo = 'Cliente ID: '+cliente_id.value
-    es_consumidor_final.value = cliente.data.es_consumidor_final
+    es_consumidor_final.value = sino_a_tf(cliente.data.es_consumidor_final)
     nombre_o_razon_social.value = cliente.data.nombre_o_razon_social
     cuit_o_cuil.value = cliente.data.cuit_o_cuil
     telefonos.value = cliente.data.telefonos
@@ -332,7 +332,7 @@ console.log(cliente_id.value)
 
     const json = JSON.stringify({ 
         cliente_id: cliente_id.value,
-        es_consumidor_final: es_consumidor_final.value,
+        es_consumidor_final: tf_a_sino(es_consumidor_final.value),
         nombre_o_razon_social: nombre_o_razon_social.value,
         cuit_o_cuil: cuit_o_cuil.value,
         direccion: direccion.value,
@@ -358,11 +358,13 @@ console.log(cliente_id.value)
     }
     else {
       if (props.accion == 'M') {
-        const body_update = await axios.put(ENDPOINT_PATH_API.value + "cliente/"+cliente_id.value, json, {headers: headersAxios.value[0]})
+        //const body_update = await axios.put(ENDPOINT_PATH_API.value + "cliente/"+cliente_id.value, json, {headers: headersAxios.value[0]})
+        const body_update = await axios.post(ENDPOINT_PATH_API.value + "cliente-update/"+cliente_id.value, json, {headers: headersAxios.value[0]})
         cod_mensaje = 'MM'
       }
       if (props.accion == 'B') {
-        const body_update = await axios.delete(ENDPOINT_PATH_API.value + "cliente/"+cliente_id.value, json, {headers: headersAxios.value[0]})
+        //const body_update = await axios.delete(ENDPOINT_PATH_API.value + "cliente/"+cliente_id.value, json, {headers: headersAxios.value[0]})
+        const body_update = await axios.post(ENDPOINT_PATH_API.value + "cliente-delete/"+cliente_id.value, json, {headers: headersAxios.value[0]})
         cod_mensaje = 'MB'
       }
     }
@@ -376,6 +378,15 @@ console.log(cliente_id.value)
   // ----- Fin: Validación y envio del Formulario Encabezado
   
 
+  function sino_a_tf(sino) {
+    return sino == 'SI' ? true : false
+  }
+
+  function tf_a_sino(tf) {
+    console.log('tf')
+    console.log(tf)
+    return tf ? 'SI' : 'NO'
+  }
 
 </script>
 

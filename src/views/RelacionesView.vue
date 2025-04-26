@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <v-container>
+    <v-container fluid>
         <suspense timeout="0">
             <RelacionesList :cod_mensaje="props.cod_mensaje" />
         </suspense>

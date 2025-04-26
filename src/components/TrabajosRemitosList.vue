@@ -278,7 +278,7 @@
   //Valido el Formulario
   async function validate () {
     await formServicios.value.validate()
-    if (validServicio.value) {
+    if (validServicio.value || accionABM.value == 'B') {
         enviarFormServicio()
     }    
   }
@@ -318,11 +318,12 @@
       body_abm = await axios.post(ENDPOINT_PATH_API.value + "remito-create", formData, {headers: headersAxiosFiles.value[0]})
     }
     if (accionABM.value == 'M') {
-      body_abm = await axios.put(ENDPOINT_PATH_API.value + "remito-update", formData, {headers: headersAxiosFiles.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "remito-update/"+remito_id.value, formData, {headers: headersAxiosFiles.value[0]})
     }  
     
     if (accionABM.value == 'B') {
-      body_abm = await axios.delete(ENDPOINT_PATH_API.value + "remito/"+remito_id.value, json, {headers: headersAxios.value[0]})
+      //body_abm = await axios.delete(ENDPOINT_PATH_API.value + "remito/"+remito_id.value, json, {headers: headersAxios.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "remito-delete/"+remito_id.value, json, {headers: headersAxios.value[0]})
     }      
     mensaje.value = body_abm['data'].mensaje
 

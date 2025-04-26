@@ -69,13 +69,13 @@
       valid: true,
       error: false,
       show1: false,
-      password: '123456',
+      password: null,
       passwordRules: {
          required: value => !!value || 'Required.',
          min: v => v.length >= 8 || 'Min 8 characters',
          emailMatch: () => (`The email and password you entered don't match`),
       },
-      email: 'fernandomadoz@hotmail.com',
+      email: null,
       emailRules: [
         v => !!v || 'E-mail is required',
         v => /.+@.+\..+/.test(v) || 'E-mail must be valid',
@@ -87,6 +87,7 @@
       async login() {
          try {
             this.result_login = await auth.login(this.email, this.password);
+            this.error = false;
             
             
             // Con Login Laravel 5.4 (Laravel Passport)
@@ -99,11 +100,27 @@
             const rol_de_usuario_id = this.result_login['data']['rol_de_usuario_id'];
 
             auth.setUserLogged(this.email, true, token, name, user_id, rol_de_usuario_id); 
-                    
+                  
             this.$router.push("/");
-         } catch (error) {
+         } catch(error) {
             this.error = true;
-            this.result_login = error;
+            if (error.response) {
+               if (error.response.data['msg']) {
+                  this.result_login = error.response.data['msg']  // JSON de respuesta
+               }
+               else {                  
+                  // El servidor respondió con un código de estado diferente de 2xx
+                  this.result_login = 'Error status: '+ error.response.status // Código 404
+                  this.result_login = 'Datos del error:'+ error.response.data  // JSON de respuesta
+                  this.result_login = 'Encabezados: '+ error.response.headers
+               }
+            } else if (error.request) {
+               // La solicitud fue hecha pero no se recibió respuesta
+               this.result_login = 'No se recibió respuesta del servidor: '+error.request
+            } else {
+               // Algo salió mal al configurar la solicitud
+               this.result_login = 'Error al configurar la solicitud: '+error.message
+            }
          }
       },
       validate () {

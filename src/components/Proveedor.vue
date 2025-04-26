@@ -312,11 +312,13 @@ console.log(proveedor_id.value)
     }
     else {      
       if (props.accion == 'M') {
-        const body_update = await axios.put(ENDPOINT_PATH_API.value + "proveedor/"+proveedor_id.value, json, {headers: headersAxios.value[0]})
+        //const body_update = await axios.put(ENDPOINT_PATH_API.value + "proveedor/"+proveedor_id.value, json, {headers: headersAxios.value[0]})
+        const body_update = await axios.post(ENDPOINT_PATH_API.value + "proveedor-update/"+proveedor_id.value, json, {headers: headersAxios.value[0]})
         cod_mensaje = 'MM'
       }      
       if (props.accion == 'B') {
-        const body_update = await axios.delete(ENDPOINT_PATH_API.value + "proveedor/"+proveedor_id.value, json, {headers: headersAxios.value[0]})
+        //const body_update = await axios.delete(ENDPOINT_PATH_API.value + "proveedor/"+proveedor_id.value, json, {headers: headersAxios.value[0]})
+        const body_update = await axios.post(ENDPOINT_PATH_API.value + "proveedor-delete/"+proveedor_id.value, json, {headers: headersAxios.value[0]})
         cod_mensaje = 'MB'
       }
     }    

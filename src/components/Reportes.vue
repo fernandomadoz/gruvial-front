@@ -12,6 +12,11 @@
             <ReporteRendimiento/>
           </v-col>
 
+          <!--Rendimiento (Facturas vs Gastos)-->
+          <v-col cols="12" sm="12" class="p-2" v-if="mostrarRepGerencia">
+            <ReporteFacturaVsGastos/>
+          </v-col>
+
           <!--Compras por Categoria-->
           <v-col cols="12" sm="12" class="p-2" v-if="mostrarRepGerencia">
             <ReporteComprasPorCategoria/>
@@ -33,6 +38,7 @@
 </template>
 <script setup>
   import ReporteIva from '../components/ReporteIva.vue';
+  import ReporteFacturaVsGastos from '../components/ReporteFacturaVsGastos.vue';
   import ReporteRendimiento from '../components/ReporteRendimiento.vue';
   import ReporteComprasPorCategoria from '../components/ReporteComprasPorCategoria.vue';
   import ReporteTrabajosPorMaquina from '../components/ReporteTrabajosPorMaquina.vue';

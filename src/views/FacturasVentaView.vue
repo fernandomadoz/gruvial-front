@@ -1,8 +1,8 @@
 <template>
   <v-main>
-    <v-container>
+    <v-container fluid>
         <suspense timeout="0">
-            <FacturasList />
+            <FacturasVentaList />
         </suspense>
     </v-container>
   </v-main>
@@ -12,6 +12,6 @@
 import { defineComponent } from 'vue';
 
 // Components
-import FacturasList from '../components/FacturasList.vue';
+import FacturasVentaList from '../components/FacturasVentaList.vue';
 
 </script>

@@ -1,7 +1,7 @@
 <template>
   <v-main>
-    <v-container>
-        <suspense timeout="0">
+    <v-container fluid>
+      <suspense timeout="0">
             <Compra  :tab="props.tab" :compra_encabezado_id="props.compra_encabezado_id"/>
         </suspense>
     </v-container>

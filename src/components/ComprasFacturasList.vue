@@ -22,12 +22,12 @@
                 <thead>
                 <tr>
                     <th class="text-left">Accion</th>
-                    <th class="text-left">id</th>
-                    <th class="text-left">Factura</th>
-                    <th class="text-left">Fecha de Factura</th>
-                    <th class="text-left">Descripcion</th>
-                    <th class="text-left">Archivo</th>
-                    <th class="text-left">Importe Total</th>
+                    <th class="text-left pointer" @click="cambiarOrdenFacturas('id')">id</th>
+                    <th class="text-left pointer" @click="cambiarOrdenFacturas('tipo_de_factura.razon_social')">Factura</th>
+                    <th class="text-left pointer" @click="cambiarOrdenFacturas('fecha_de_factura_f')">Fecha de Factura</th>
+                    <th class="text-left pointer" @click="cambiarOrdenFacturas('descripcion')">Descripcion</th>
+                    <th class="text-left pointer" @click="cambiarOrdenFacturas('archivo')">Archivo</th>
+                    <th class="text-left pointer" @click="cambiarOrdenFacturas('importe_total')">Importe Total</th>
                     
                 </tr>
                 </thead>
@@ -155,15 +155,31 @@
                                 </MoneyField> 
                             </v-col>
 
-                            <v-col cols="12" sm="6" md="8">                       
+                            <v-col cols="12" sm="12" md="12">                       
                                 <v-btn-toggle
+                                    v-model="modo_calculo_iva"
+                                    rounded="0"
+                                    color="deep-purple-accent-3"
+                                    group
+                                >
+                                    <div class="mx-5">IVA:</div>
+                                    <v-btn value="M">
+                                    MANUAL
+                                    </v-btn>
+                                    <v-btn value="C">
+                                    CALCULAR
+                                    </v-btn>
+                                    
+                                </v-btn-toggle>
+
+                                <v-btn-toggle
+                                    v-show="modo_calculo_iva == 'C'"
                                     v-model="porcentaje_de_iva"
                                     rounded="0"
                                     color="deep-purple-accent-3"
                                     group
-                                    class="float-right"
+                                    class="ml-3"
                                 >
-                                    <div class="mx-5">IVA:</div>
                                     <v-btn :value="21">
                                     21%
                                     </v-btn>
@@ -185,6 +201,7 @@
                                     
                                 </v-btn-toggle>
                             </v-col>
+                            
                             <v-col cols="12" sm="6" md="4">
                                 <v-text-field
                                     :disabled="deshabilitarEdicionCamposABMFacturas"
@@ -308,7 +325,7 @@
                             </v-col>
 
                             <!-- Arvhivo mostrar-->
-                            <v-col cols="12" sm="6" md="4" v-if="factura.archivo && !borrarArchivoDeFactura">                                
+                            <v-col cols="12" sm="6" md="4" v-if="factura.archivo">                                
                                 <div class="text-center">
                                     <a :href="factura.archivo" target="_blank">
                                     <v-btn
@@ -321,24 +338,26 @@
                                 </div>
                             </v-col>
 
-                            <!-- Quitar archivo-->
-                            <v-col cols="12" sm="6" md="4" v-if="factura.archivo">                                
-                                <v-switch
-                                    :disabled="deshabilitarEdicionCamposABMFacturas"
-                                    v-model="borrarArchivoDeFactura"
-                                    color="success"
-                                    label="Borrar archivo de Factura"
-                                    class="float-left"
-                                ></v-switch>
-                            </v-col>
-
                             <!-- Arvhivo carga-->
-                            <v-col cols="12" sm="6" md="4">                                
+                            <v-col cols="12" sm="6" md="4" v-if="borrarArchivoDeFactura == 'NO'">
                                 <v-file-input
                                     :disabled="deshabilitarEdicionCamposABMFacturas"
                                     v-model="archivo_new"
                                     label="Cargar o reemplazar archivo"
                                 ></v-file-input>
+                            </v-col>
+
+                            <!-- Quitar archivo-->
+                            <v-col cols="12" sm="6" md="4" v-if="factura.archivo || borrarArchivoDeFactura == 'SI'">                                
+                                <v-switch
+                                    :disabled="deshabilitarEdicionCamposABMFacturas"
+                                    v-model="borrarArchivoDeFactura"
+                                    color="success"
+                                    false-value="NO"
+                                    true-value="SI"
+                                    label="Borrar archivo de Factura"
+                                    class="float-left"
+                                ></v-switch>
                             </v-col>
 
                             <v-col cols="12" sm="12" md="12">
@@ -407,6 +426,7 @@
   import router from "@/router";
   import { isProxy, toRaw } from 'vue';
   import MoneyField from '../components/MoneyField.vue';
+  import { cambiarOrden, crearOrdenActual } from '@/utils/sortUtils';
 
 
   const { token, headersAxios, headersAxiosFiles, compra_encabezado_id, user_id } = useData();
@@ -430,8 +450,9 @@
   const formFacturas = ref(null) 
   let fecha_de_factura = ref(null)
   const archivo_new = ref([])
-  const porcentaje_de_iva = ref(21)
-  const borrarArchivoDeFactura = ref(false)
+  const porcentaje_de_iva = ref(null)
+  const modo_calculo_iva = ref('M')
+  const borrarArchivoDeFactura = ref('NO')
 
   const currencyOptions_general = ref({
     locale: 'es-AR', 
@@ -495,7 +516,7 @@
   //Valido el Formulario
   async function validate () {
     await formFacturas.value.validate()
-    if (validFactura.value) {
+    if (validFactura.value || accionABM.value == 'B') {
         enviarFormFactura()
     }    
   }
@@ -562,7 +583,8 @@
     }  
     
     if (accionABM.value == 'B') {
-      body_abm = await axios.delete(ENDPOINT_PATH_API.value + "factura-compra/"+factura_id.value, json, {headers: headersAxios.value[0]})
+      //body_abm = await axios.delete(ENDPOINT_PATH_API.value + "factura-compra/"+factura_id.value, json, {headers: headersAxios.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "factura-compra-delete/"+factura_id.value, json, {headers: headersAxios.value[0]})
     }      
     mensaje.value = body_abm['data'].mensaje
 
@@ -604,6 +626,7 @@
             importe_total: 0
         }
         porcentaje_de_iva.value = 21
+        modo_calculo_iva.value = 'C'
         
         botonABM.value = 'Insertar';
         deshabilitarEdicionCamposABMFacturas.value = false    
@@ -612,7 +635,8 @@
     if (accion == 'M') {
         botonABM.value = 'Modificar';
         factura.value = item
-        calcularPorcentajeIVA()
+        porcentaje_de_iva.value = null
+        modo_calculo_iva.value = 'M'
 
         factura_id.value = factura.value.id        
         deshabilitarEdicionCamposABMFacturas.value = false       
@@ -622,7 +646,8 @@
         factura.value = item
         factura_id.value = factura.value.id   
         deshabilitarEdicionCamposABMFacturas.value = true    
-        calcularPorcentajeIVA()
+        porcentaje_de_iva.value = null
+        modo_calculo_iva.value = 'M'
 
     }
   }
@@ -669,37 +694,56 @@
     watch(
       () => factura.value.tipo_de_factura.id,
       async (newValue, oldValue) => {
-        if (newValue == 3) {
+        if (newValue == 3 || newValue == 4 || newValue == 6) {
           porcentaje_de_iva.value = 0
         }
       }
   )   
+
+  watch(
+        () => modo_calculo_iva.value,
+        (newValue, oldValue) => {         
+            if (newValue == 'M') {
+                porcentaje_de_iva.value = 0
+            }
+        }
+    )  
+
+
+
   function calcularIVA() {
-    porcentaje_de_iva.value = Number(porcentaje_de_iva.value)
-    if (porcentaje_de_iva.value > 0) {
-      factura.value.importe_iva = factura.value.importe_total * (porcentaje_de_iva.value / (100 + porcentaje_de_iva.value))
-      factura.value.importe_iva = factura.value.importe_iva.toFixed(2)
-      factura.value.importe_neto = factura.value.importe_total - factura.value.importe_iva
-      factura.value.importe_neto = factura.value.importe_neto.toFixed(2)
-    }
-    else {
-        factura.value.importe_iva = 0
-        factura.value.importe_neto = factura.value.importe_total
+    if (modo_calculo_iva.value == 'C') {
+        porcentaje_de_iva.value = Number(porcentaje_de_iva.value)
+        if (porcentaje_de_iva.value > 0) {
+            factura.value.importe_iva = factura.value.importe_total * (porcentaje_de_iva.value / (100 + porcentaje_de_iva.value))
+            factura.value.importe_iva = factura.value.importe_iva.toFixed(2)
+            factura.value.importe_neto = factura.value.importe_total - factura.value.importe_iva
+            factura.value.importe_neto = factura.value.importe_neto.toFixed(2)
+        }
+        else {
+            factura.value.importe_iva = 0
+            factura.value.importe_neto = factura.value.importe_total
+        }   
     }
 }
     
-  function calcularPorcentajeIVA() {
-    if (factura.value.importe_iva > 0) {
-        porcentaje_de_iva.value = ((factura.value.importe_total/(factura.value.importe_total-factura.value.importe_iva))*100)-100
-        porcentaje_de_iva.value =  porcentaje_de_iva.value.toFixed(1)
-    }
-    else {
-        porcentaje_de_iva.value = 0
-    }
-  }
+
+    // Crear una instancia de `ordenActual` utilizando la función de utilidades
+    const ordenActual = crearOrdenActual();
+
+    // Usar la función importada para cambiar el orden de `cobros`
+    const cambiarOrdenFacturas = (propiedad) => {
+    cambiarOrden(listaFacturas.value, ordenActual.value, propiedad);
+    };
+
 
 </script>
 
 
 <style scoped>
+
+.pointer {
+  cursor: pointer;
+}
+
 </style>

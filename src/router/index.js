@@ -2,6 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import TrabajosView from '../views/TrabajosView.vue';
 import TrabajoView from '../views/TrabajoView.vue';
+import MaquinasView from '../views/MaquinasView.vue';
+import MaquinaView from '../views/MaquinaView.vue';
+import MaquinaInfoView from '../views/MaquinaInfoView.vue';
 import RelacionView from '../views/RelacionView.vue';
 import ClienteView from '../views/ClienteView.vue';
 import ProveedorView from '../views/ProveedorView.vue';
@@ -13,7 +16,9 @@ import ProveedoresView from '../views/ProveedoresView.vue';
 import RecordatoriosView from '../views/RecordatoriosView.vue';
 import ChequesView from '../views/ChequesView.vue';
 import ChequeView from '../views/ChequeView.vue';
-import FacturasView from '../views/FacturasView.vue';
+import FacturasVentaView from '../views/FacturasVentaView.vue';
+import FacturasCompraView from '../views/FacturasCompraView.vue';
+import ServiciosView from '../views/ServiciosView.vue';
 import CotizacionesView from '../views/CotizacionesView.vue';
 import RelacionesView from '../views/RelacionesView.vue';
 import LoginView from "../views/LoginView.vue";
@@ -21,6 +26,8 @@ import NotificacionesView from "../views/NotificacionesView.vue";
 import Login from "../views/Login.vue";
 import ChangePasswordView from '../views/ChangePasswordView.vue';
 import ReportesView from '../views/ReportesView.vue';
+import CargaView from '../views/CargaView.vue';
+
 import { useDataStore } from "@/stores/DataStore";
 import auth from "@/logic/auth";
 
@@ -110,6 +117,23 @@ const router = createRouter({
       name: 'ClientesList',
       component: ClientesView,
       props: true
+    },
+    { 
+      path: "/maquinas-list", 
+      name: 'MaquinasList',
+      component: MaquinasView 
+    },
+    { 
+      path: "/maquina/:maquina_id/:tab?", 
+      name: 'Maquina',
+      component: MaquinaView,
+      props: true
+    },  
+    { 
+      path: "/maquina-info/:maquina_id/:modo?", 
+      name: 'MaquinaInfo',
+      component: MaquinaInfoView,
+      props: true
     },  
     { 
       path: "/proveedores-list/:cod_mensaje?", 
@@ -130,9 +154,19 @@ const router = createRouter({
       props: true
     },  
     { 
-      path: "/facturas-list", 
-      name: 'FacturasList',
-      component: FacturasView 
+      path: "/facturas-venta-list", 
+      name: 'FacturasVentaList',
+      component: FacturasVentaView 
+    },  
+    { 
+      path: "/facturas-compra-list", 
+      name: 'FacturasCompraList',
+      component: FacturasCompraView 
+    },  
+    { 
+      path: "/servicios-list", 
+      name: 'ServiciosList',
+      component: ServiciosView 
     },  
     { 
       path: "/cotizaciones-list", 
@@ -163,6 +197,11 @@ const router = createRouter({
       name: 'ReportesView',
       component: ReportesView 
     },
+    { 
+      path: "/carga", 
+      name: 'CargaView',
+      component: CargaView 
+    },
   ]
 });
 
@@ -173,7 +212,9 @@ router.beforeEach(async (to, from) => {
     // make sure the user is authenticated
     !DataStore.isLogged &&
     // ❗️ Avoid an infinite redirect
-    to.name !== 'Login'
+    to.name !== 'Login' &&
+    // ❗️ Avoid an infinite redirect
+    to.name !== 'CargaView'
   ) {
     // redirect the user to the login page
     return { name: 'Login' }

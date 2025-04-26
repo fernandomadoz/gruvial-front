@@ -1,6 +1,6 @@
 <template>
     <v-main>
-      <v-container>
+      <v-container fluid>
           <suspense timeout="0">
               <Recordatorio :accion="props.accion" :recordatorio_id="props.recordatorio_id" />
           </suspense>

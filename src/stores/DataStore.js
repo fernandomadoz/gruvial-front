@@ -43,6 +43,7 @@ export const useDataStore = defineStore("DataStore", {
         }],
         getRolDeUsusarioId: (state) => state.rol_de_usuario_id,
         getFirmas: (state) => state.firmas,
+        getFirma: (state) => state.firmas[state.firma_id-1],
 
         getPermisosPorUsuario: (state) => {
             let firmas = []
@@ -77,10 +78,13 @@ export const useDataStore = defineStore("DataStore", {
                     'cotizaciones', 
                     'compras', 
                     'cheques', 
-                    'facturas', 
+                    'facturas_venta', 
+                    'facturas_compra', 
+                    'servicios', 
                     'recordatorios', 
                     'clientes', 
-                    'proveedores', 
+                    'proveedores',
+                    'maquinas', 
                     'reportes', 
                     'cambiar-contraseña',
                 ]
@@ -125,19 +129,22 @@ export const useDataStore = defineStore("DataStore", {
         
         getOpcionesMenuPrincipal: (state) => {
             let opciones_rol = [
-                {title: 'Notificaciones', link: '/centro-de-notificaciones'},
-                {title: 'Trabajos', link: '/trabajos-list'},
-                {title: 'Cotizaciones', link: '/cotizaciones-list'},
-                {title: 'Compras y Gastos', link: '/compras-list'},
-                {title: 'Cheques', link: '/cheques-list'},
-                {title: 'Facturas', link: '/facturas-list'},
-                {title: 'Relaciones', link: '/relaciones-list'},
-                {title: 'Recordatorios', link: '/recordatorios-list'},
-                {title: 'Clientes', link: '/clientes-list'},
-                {title: 'Proveedores', link: '/proveedores-list'},
-                {title: 'Cambiar Firma', link: '/'},
-                {title: 'Cambiar Contraseña', link: '/change-password'},
-                {title: 'Reportes', link: '/reportes'},
+                {title: 'Notificaciones', link: '/centro-de-notificaciones', icon: 'mdi-bell', showInHome: false},
+                {title: 'Trabajos', link: '/trabajos-list', icon: 'mdi-account-hard-hat', showInHome: true},
+                {title: 'Cotizaciones', link: '/cotizaciones-list', icon: 'mdi-file-pdf-box', showInHome: true},
+                {title: 'Compras y Gastos', link: '/compras-list', icon: 'mdi-currency-usd', showInHome: true},
+                {title: 'Cheques', link: '/cheques-list', icon: 'mdi-cash', showInHome: true},
+                {title: 'Facturas Venta', link: '/facturas-venta-list', icon: 'mdi-file-document-outline', showInHome: true},
+                {title: 'Facturas Compra', link: '/facturas-compra-list', icon: 'mdi-file-document-outline', showInHome: true},
+                {title: 'Ordenes de Servicio', link: '/servicios-list', icon: 'mdi-file-document-outline', showInHome: true},
+                {title: 'Relaciones', link: '/relaciones-list', icon: 'mdi-cached', showInHome: true},
+                {title: 'Recordatorios', link: '/recordatorios-list', icon: 'mdi-calendar-clock', showInHome: true},
+                {title: 'Maquinas', link: '/maquinas-list', icon: 'mdi-tow-truck', showInHome: false},
+                {title: 'Clientes', link: '/clientes-list', icon: 'mdi-account-group', showInHome: false},
+                {title: 'Proveedores', link: '/proveedores-list', icon: 'mdi-briefcase-account', showInHome: false},
+                {title: 'Cambiar Firma', link: '/', icon: 'mdi-office-building', showInHome: false},
+                {title: 'Cambiar Contraseña', link: '/change-password', icon: 'mdi-shield-key-outline', showInHome: false},
+                {title: 'Reportes', link: '/reportes', icon: 'mdi-finance', showInHome: false},
               ]
 
             let permisos = [
@@ -146,9 +153,12 @@ export const useDataStore = defineStore("DataStore", {
                 'cotizaciones', 
                 'compras', 
                 'cheques', 
-                'facturas', 
+                'facturas_venta', 
+                'facturas_compra', 
+                'servicios', 
                 'relaciones', 
                 'recordatorios', 
+                'maquinas', 
                 'clientes', 
                 'proveedores', 
                 'cambiar-firma', 

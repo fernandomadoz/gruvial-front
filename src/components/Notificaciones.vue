@@ -1,4 +1,29 @@
 <template>
+    <v-row align="center" justify="center">
+      <v-col cols="auto"
+      v-for="(item, index) in getOpcionesMenuPrincipal"
+      :key="index"
+      >
+      
+        <v-btn
+          v-if="item.showInHome"
+          class="ma-2 py-3"
+          color="yellow-lighten-2"
+          size="large"
+          rounded="lg"
+          height="72"
+          min-width="164"
+          :to="item.link"
+        >
+            <v-icon
+              :icon="item.icon"
+              start
+            ></v-icon>
+            {{ item.title }}
+          </v-btn>
+        </v-col>
+    </v-row>
+
   <v-row>
     <!-- CHEQUES -->
     <v-col cols="12" sm="12" md="12" v-if="getNotificacionesPorUsuario.includes('cheques')">
@@ -42,6 +67,22 @@
     </v-col>
     <!-- FIN PAGOS MENSUALES -->
 
+    <!-- TRABAJOS MENSUALES -->
+    <v-col cols="12" sm="12" md="12" v-if="getNotificacionesPorUsuario.includes('trabajos')">      
+      <TabNotificaciones 
+        titulo="Trabajos Mensuales Facturados"
+        tipo="trabajomensual" 
+        icon="mdi-calendar-month" 
+        :listaVencidos="listaTrabajosMensualesVencidos" 
+        :listaHoy="listaTrabajosMensualesHoy" 
+        :listaProximos="listaTrabajosMensualesProximos" 
+        tituloVencidos="Mes Anterior" 
+        tituloHoy="Mes Actual" 
+        tituloProximos="Proximo Mes"
+      />     
+    </v-col>
+    <!-- FIN TRABAJOS MENSUALES -->
+
     <!-- SUELDOS -->
     <v-col cols="12" sm="12" md="12" v-if="getNotificacionesPorUsuario.includes('sueldos')">      
       <TabNotificaciones 
@@ -82,7 +123,7 @@
   import TabNotificaciones from '../components/TabNotificaciones.vue';
 
   
-  const { headersAxios, firma_id, getNotificacionesPorUsuario } = useData();
+  const { headersAxios, firma_id, getNotificacionesPorUsuario, getOpcionesMenuPrincipal } = useData();
   const ENDPOINT_PATH_API = ref(import.meta.env.VITE_ENDPOINT_PATH+'api/')
 
   const panel = ref(false)
@@ -101,6 +142,9 @@
   const listaRecordatoriosVencidos = ref(null)
   const listaRecordatoriosHoy = ref(null)
   const listaRecordatoriosProximos = ref(null)
+  const listaTrabajosMensualesVencidos = ref(null)
+  const listaTrabajosMensualesHoy = ref(null)
+  const listaTrabajosMensualesProximos = ref(null)
   
   const listaPagosMensuales = ref(null)
 
@@ -129,6 +173,14 @@
   listaMensualesHoy.value = body_notificaciones_pagos_mensuales['data']['hoy']
   listaMensualesProximos.value = body_notificaciones_pagos_mensuales['data']['proximos']
   
+
+  //Traigo NOTIFICACIONES DE TRABAJOS MENSUALES
+  let body_notificaciones_trabajos_mensuales = await axios.post(ENDPOINT_PATH_API.value + "notificaciones-trabajos-mensuales", jsonNotificaciones, {headers: headersAxios.value[0]})
+  listaTrabajosMensualesVencidos.value = body_notificaciones_trabajos_mensuales['data']['vencidos']
+  listaTrabajosMensualesHoy.value = body_notificaciones_trabajos_mensuales['data']['hoy']
+  listaTrabajosMensualesProximos.value = body_notificaciones_trabajos_mensuales['data']['proximos']
+  
+
   
   //Traigo NOTIFICACIONES DE PAGOS MENSUALES
   let body_notificaciones_sueldos = await axios.post(ENDPOINT_PATH_API.value + "notificaciones-sueldos", jsonNotificaciones, {headers: headersAxios.value[0]})

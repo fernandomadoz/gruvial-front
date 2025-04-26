@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <v-container>
+    <v-container fluid>
         <suspense timeout="0">
             <Cheque :accion="props.accion" :cheque_id="props.cheque_id" />
         </suspense>

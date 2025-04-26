@@ -1,18 +1,89 @@
 <template>
+    <v-row>
+
+      <v-col cols="6" sm="4" md="3">
+
+        <v-autocomplete
+          v-model="recordatorio_para_user_id"
+          :items="users"
+          item-title="detalle_select"
+          item-value="id"
+          dense
+          :rules="requeridoRules"
+          filled
+          label="Recordatorio para *"
+        ></v-autocomplete> 
+
+      </v-col>
+
+
+      <v-col cols="6" sm="4" md="2">
+          <v-select
+          v-model="paginacion"
+          label="Cant. por Página"
+          :items="[10,20,50,100,999999999]"
+        ></v-select>
+      </v-col>
+
+      <v-col cols="6" sm="6" md="7">
+        <v-autocomplete
+          v-model="tipo_de_recordatorio_id"
+          :items="tipos_de_recordatorios"
+          item-title="tipo_de_recordatorio"
+          item-value="id"
+          :rules="requeridoRules"
+          dense
+          filled
+          label="Tipo de Recordatorio *"
+        ></v-autocomplete> 
+      </v-col>
+
+      </v-row>
 
     <v-text-field
         v-model="criterio"
         label="Buscar"
     ></v-text-field>   
-    <v-toolbar color="yellow">
 
+    
+    <v-row>
+      <v-col cols="10" sm="10" md="10">
+        <v-btn-toggle v-model="mes">
+          <v-btn
+            v-for="(nombremes, index) in meses"
+            :key="index"
+            :value="index" 
+            color="primary"
+            density="compact"
+          >
+            {{ nombremes }}
+          </v-btn>
+        </v-btn-toggle>
+      </v-col>
+      <v-col cols="2" sm="2" md="2">
+        <v-btn-toggle v-model="anio">
+          <v-btn
+            v-for="(nombreanio) in anios"
+            :key="nombreanio"
+            :value="nombreanio" 
+            color="primary"
+            size="small"
+            density="compact"
+          >
+            {{ nombreanio }}
+          </v-btn>
+        </v-btn-toggle>
+      </v-col>
+    </v-row>
+
+    <v-toolbar color="yellow">
       <v-toolbar-title>
         Recordatorios
       </v-toolbar-title>
 
 
       <!--v-btn icon="mdi-magnify"></v-btn-->
-      <v-btn icon="mdi-plus" @click="irArecordatorio('A', -1)"></v-btn>
+      <v-btn icon="mdi-plus" :to="irArecordatorio('A', -1)"></v-btn>
 
     </v-toolbar>
   
@@ -24,19 +95,22 @@
             <th class="text-left">
               Accion
             </th>
-            <th class="text-left" @click="changeOrder('id')">
+            <th class="text-left pointer" @click="changeOrder('id')">
                 ID
             </th>
-            <th class="text-left" @click="changeOrder('fecha')">
+            <th class="text-left pointer" @click="changeOrder('fecha')">
                 Fecha
             </th>
-            <th class="text-left" @click="changeOrder('detalle')">
+            <th class="text-left pointer" @click="changeOrder('detalle')">
                 Detalle
             </th>
-            <th class="text-left" @click="changeOrder('completado')">
+            <th class="text-left pointer" @click="changeOrder('usuario')">
+                Para
+            </th>
+            <th class="text-left pointer" @click="changeOrder('completado')">
                 Completado
             </th>
-            <th class="text-right" @click="changeOrder('tipo_de_recordatorio')">
+            <th class="text-right pointer" @click="changeOrder('tipo_de_recordatorio')">
               Tipo de Recordatorio
             </th>
           </tr>
@@ -60,19 +134,20 @@
                 size="small"
                 icon="mdi-pencil"
                 color="yellow"
-                @click="irArecordatorio('M', item.id)"
+                :to="irArecordatorio('M', item.id)"
               ></v-btn> 
               <v-btn
                 size="small"
                 icon="mdi-close-circle"
                 color="yellow"
-                @click="irArecordatorio('B', item.id)"
+                :to="irArecordatorio('B', item.id)"
               ></v-btn> 
               
             </td>
             <td>{{ item.id }}</td>
             <td>{{ item.fecha_format }}</td>
             <td>{{ item.detalle }}</td>
+            <td>{{ item.usuario }}</td>
             <td>{{ item.completado }}</td>
             <td>{{ item.tipo_de_recordatorio }}</td>
           </tr>
@@ -101,6 +176,7 @@
   import { useData } from '../composables/useData';
   import router from "@/router";
   import { orderBy } from "lodash";
+  import { cambiarOrden, crearOrdenActual } from '@/utils/sortUtils';
   
   const { token, firma_id, headersAxios, setearMensajeStore, mensajeStore } = useData();
   const ENDPOINT_PATH_API = ref(import.meta.env.VITE_ENDPOINT_PATH+'api/')
@@ -113,7 +189,31 @@
   const orderDirection = ref('asc')
   const listaRecordatorios = ref()
   const loading = ref(false)
+  const paginacion = ref(999999999)
   const cant_paginas = ref(1)
+  const meses = ref([
+    "TODOS", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ])
+  const mes = ref(new Date().getMonth() + 1)
+  const anio = ref(new Date().getFullYear())
+
+  const anios = ref([
+  anio.value-1, anio.value, anio.value+1, 'TODOS'
+  ])
+  const tipo_de_recordatorio_id = ref(null)
+  const recordatorio_para_user_id = ref(null)
+
+//Traigo Tipos de Recordatorios
+const body_tipos_de_recordatorios = await axios.get(ENDPOINT_PATH_API.value + "tipo-de-recordatorio", {headers: headersAxios.value[0]})
+let tipos_de_recordatorios = body_tipos_de_recordatorios['data']
+
+//Traigo los Usuarios
+let jsonRecordatorio = JSON.stringify({ 
+        firma_id: 1
+    });
+let body_users = await axios.post(ENDPOINT_PATH_API.value + "usuarios", jsonRecordatorio, {headers: headersAxios.value[0]});
+let users = body_users['data']
 
   
   const props = defineProps({
@@ -149,7 +249,7 @@
           
     const irArecordatorio = (accion, id) => {
         let destino = '/recordatorio/'+accion+'/'+id
-        router.push(destino);
+        return destino;
       }
 
     const traerRecordatorios = async () => {
@@ -160,7 +260,13 @@
           page: page.value,
           criterio: criterio.value,
           orderBy: sortBy.value,
-          orderDirection: orderDirection.value
+          paginacion: paginacion.value,
+          orderDirection: orderDirection.value,
+          mes: mes.value,
+          anio: anio.value,
+          tipo_de_recordatorio_id: tipo_de_recordatorio_id.value,
+          recordatorio_para_user_id: recordatorio_para_user_id.value,
+          
       });
 
       let body = await axios.post(ENDPOINT_PATH_API.value + "recordatorio-listar", jsonRecordatorio, {headers: headersAxios.value[0]});
@@ -179,17 +285,30 @@
       traerRecordatorios()
     }
 
+
+    // Crear una instancia de `ordenActual` utilizando la función de utilidades
+    const ordenActual = crearOrdenActual();
+
     const changeOrder = (field) => {
-      //console.log(sortBy.value)
-      if (field != sortBy.value) {
-        sortBy.value = field
-        orderDirection.value = 'asc'
-        page.value = 1
+      
+      if (paginacion.value == 999999999) {
+        cambiarOrden(listaRecordatorios.value, ordenActual.value, field);
       }
       else {
-        orderDirection.value = orderDirection.value == 'asc' ? 'desc' : 'asc'
+        /*
+        if (field != sortBy.value) {
+          sortBy.value = field
+          orderDirection.value = 'asc'
+          page.value = 1
+        }
+        else {
+          orderDirection.value = orderDirection.value == 'asc' ? 'desc' : 'asc'
+        }
+        traerServicios()
+        */
+      console.log('no se puede ordenar')
       }
-      traerRecordatorios()
+      
     } 
     
     watch(
@@ -206,6 +325,46 @@
           traerRecordatorios()
         }
     )  
+
+    watch(
+        () => paginacion.value,
+        (newValue, oldValue) => {
+          page.value = 1
+          traerServicios()
+        }
+    )  
+    
+    watch(
+        () => mes.value,
+        (newValue, oldValue) => {
+          page.value = 1
+          traerRecordatorios()
+        }
+    )  
+
+    watch(
+        () => anio.value,
+        (newValue, oldValue) => {
+          page.value = 1
+          traerRecordatorios()
+        }
+    ) 
+
+    watch(
+        () => tipo_de_recordatorio_id.value,
+        (newValue, oldValue) => {
+          page.value = 1
+          traerRecordatorios()
+        }
+    )
+
+    watch(
+        () => recordatorio_para_user_id.value,
+        (newValue, oldValue) => {
+          page.value = 1
+          traerRecordatorios()
+        }
+    )
 
     function getTime() {
     setTimeout(() => {
@@ -227,5 +386,9 @@
 .anulada {
   background-color: #666;
   color: white;
+}
+
+.pointer {
+  cursor: pointer;
 }
 </style>

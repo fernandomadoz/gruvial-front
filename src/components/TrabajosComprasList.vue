@@ -191,7 +191,6 @@
                                     label="Tipo de Factura"
                                     :rules="tipo_de_facturaRules"
                                     required
-                                    return-object
                                 ></v-select>     
                             </v-col>
                             <v-col cols="12" sm="6" md="4">
@@ -206,15 +205,15 @@
                             <v-col cols="12" sm="6" md="4">
                                 
                                 <v-select
+                                    v-show="firma_id == 3"
                                     v-model="compra.unidad_de_negocio.id"
                                     :items="unidades_de_negocio"
                                     :disabled="deshabilitarEdicionCamposABMCompras"
                                     item-title="unidad_de_negocio"
                                     item-value="id"
-                                    label="Unidad de Negocio"
-                                    :rules="tipo_de_facturaRules"
+                                    label="Unidad de Negocio *"
+                                    :rules="unidad_de_negocioRules"
                                     required
-                                    return-object
                                 ></v-select>     
 
                             </v-col>
@@ -359,10 +358,18 @@
     v => !!v || 'Es requerido'
   ];
   
+  let unidad_de_negocioRules = [
+      value => {
+          if (firma_id.value == 3 && !value) {
+              return 'La Unidad de Negocio es requerida'
+          }
+      }
+  ]
+  
   //Valido el Formulario
   async function validate () {
     await formCompras.value.validate()
-    if (validCompra.value) {
+    if (validCompra.value || accionABM.value == 'B') {
         enviarFormCompra()
     }    
   }
@@ -372,6 +379,7 @@
 
     loading.value = true
 
+    /*
     let tipo_de_factura_id = compra.value.tipo_de_factura.id
     if (typeof(tipo_de_factura_id) == 'object') {
       tipo_de_factura_id = tipo_de_factura_id.id
@@ -386,6 +394,7 @@
     if (typeof(proveedor_id) == 'object') {
         proveedor_id = proveedor_id.id
     }
+    */
 
     //construjo el json a enviar a laravel
     json = JSON.stringify({ 
@@ -396,9 +405,9 @@
       descripcion_de_gasto: compra.value.descripcion_de_gasto,
       importe_de_compra: compra.value.importe_de_compra,
       importe_cancelado: compra.value.importe_cancelado,
-      proveedor_id: proveedor_id,
-      tipo_de_factura_id: tipo_de_factura_id,
-      unidad_de_negocio_id: unidad_de_negocio_id,
+      proveedor_id: compra.value.proveedor.id,
+      tipo_de_factura_id: compra.value.tipo_de_factura.id,
+      unidad_de_negocio_id: compra.value.unidad_de_negocio.id,
       nro_de_factura: compra.value.nro_de_factura,
       observaciones: compra.value.observaciones,
       user_id: user_id.value,
@@ -411,11 +420,13 @@
       body_abm = await axios.post(ENDPOINT_PATH_API.value + "compra", json, {headers: headersAxios.value[0]})
     }
     if (accionABM.value == 'M') {
-      body_abm = await axios.put(ENDPOINT_PATH_API.value + "compra/"+compra_id.value, json, {headers: headersAxios.value[0]})
+      //body_abm = await axios.put(ENDPOINT_PATH_API.value + "compra/"+compra_id.value, json, {headers: headersAxios.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "compra-update/"+compra_id.value, json, {headers: headersAxios.value[0]})
     }  
     
     if (accionABM.value == 'B') {
-      body_abm = await axios.delete(ENDPOINT_PATH_API.value + "compra/"+compra_id.value, json, {headers: headersAxios.value[0]})
+      //body_abm = await axios.delete(ENDPOINT_PATH_API.value + "compra/"+compra_id.value, json, {headers: headersAxios.value[0]})
+      body_abm = await axios.delete(ENDPOINT_PATH_API.value + "compra-delete/"+compra_id.value, json, {headers: headersAxios.value[0]})
     }      
     mensaje.value = body_abm['data'].mensaje
 
@@ -469,6 +480,12 @@
         botonABM.value = 'Modificar';
         compra.value = item
         compra_id.value = compra.value.id        
+        if (!compra.value.unidad_de_negocio_id) {
+            compra.value.unidad_de_negocio = {
+                id: null
+            }
+
+        }
         deshabilitarEdicionCamposABMCompras.value = false       
     }
     if (accion == 'B') {

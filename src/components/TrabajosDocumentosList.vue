@@ -264,7 +264,7 @@
   //Valido el Formulario
   async function validate () {
     await formDocumentos.value.validate()
-    if (validDocumento.value) {
+    if (validDocumento.value || accionABM.value == 'B') {
         enviarFormDocumento()
     }    
   }
@@ -310,11 +310,12 @@
     }
 
     if (accionABM.value == 'M') {
-      body_abm = await axios.post(ENDPOINT_PATH_API.value + "documento-update", formData, {headers: headersAxiosFiles.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "documento-update/"+documento_id.value, formData, {headers: headersAxiosFiles.value[0]})
     }  
     
     if (accionABM.value == 'B') {
-      body_abm = await axios.delete(ENDPOINT_PATH_API.value + "documento/"+documento_id.value, json, {headers: headersAxios.value[0]})
+      //body_abm = await axios.delete(ENDPOINT_PATH_API.value + "documento/"+documento_id.value, json, {headers: headersAxios.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "documento-delete/"+documento_id.value, json, {headers: headersAxios.value[0]})
     }      
     mensaje.value = body_abm['data'].mensaje
 

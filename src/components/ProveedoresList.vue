@@ -15,7 +15,7 @@
 
 
       <!--v-btn icon="mdi-magnify"></v-btn-->
-      <v-btn icon="mdi-plus" @click="irAproveedor('A', -1)"></v-btn>
+      <v-btn icon="mdi-plus" :to="irAproveedor('A', -1)"></v-btn>
 
     </v-toolbar>
   
@@ -27,13 +27,13 @@
             <th class="text-left">
               Accion
             </th>
-            <th class="text-left" @click="changeOrder('nombre_o_razon_social')">
+            <th class="text-left pointer" @click="changeOrder('nombre_o_razon_social')">
                 Nombre o Razon Social
             </th>
-            <th class="text-left" @click="changeOrder('cuit_o_cuil')">
+            <th class="text-left pointer" @click="changeOrder('cuit_o_cuil')">
                 CUIT o CUIL
             </th>
-            <th class="text-right" @click="changeOrder('condicion_iva')">
+            <th class="text-right pointer" @click="changeOrder('condicion_iva')">
               Condicion IVA
             </th>
           </tr>
@@ -57,7 +57,7 @@
                 size="small"
                 icon="mdi-pencil"
                 color="yellow"
-                @click="irAproveedor('M', item.id)"
+                :to="irAproveedor('M', item.id)"
               ></v-btn> 
               <!--v-btn
                 size="small"
@@ -144,7 +144,7 @@
           
     const irAproveedor = (accion, id) => {
         let destino = '/proveedor/'+accion+'/'+id
-        router.push(destino);
+        return destino;
       }
 
     const traerProveedores = async () => {
@@ -220,5 +220,9 @@
 .anulada {
   background-color: #666;
   color: white;
+}
+
+.pointer {
+  cursor: pointer;
 }
 </style>

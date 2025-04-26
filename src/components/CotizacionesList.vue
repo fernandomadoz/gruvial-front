@@ -3,18 +3,52 @@
     <v-alert type="success" v-show="mensaje != null">{{ mensaje }}</v-alert>
     <hr  v-show="mensaje != null" />    
     <v-text-field
-        v-model="criterio"
-        label="criterio de búsqueda"
-      ></v-text-field> 
-    <v-toolbar color="yellow">
+      v-model="criterio"
+      label="criterio de búsqueda"
+    ></v-text-field> 
 
+
+    <v-row>
+      <v-col cols="10" sm="10" md="10">
+        <v-btn-toggle v-model="mes">
+          <v-btn
+            v-for="(nombremes, index) in meses"
+            :key="index"
+            :value="index" 
+            color="primary"
+            density="compact"
+          >
+            {{ nombremes }}
+          </v-btn>
+        </v-btn-toggle>
+      </v-col>
+      <v-col cols="2" sm="2" md="2">
+        <v-btn-toggle v-model="anio">
+          <v-btn
+            v-for="(nombreanio) in anios"
+            :key="nombreanio"
+            :value="nombreanio" 
+            color="primary"
+            size="small"
+            density="compact"
+          >
+            {{ nombreanio }}
+          </v-btn>
+        </v-btn-toggle>
+      </v-col>
+    </v-row>
+
+
+      <v-toolbar color="yellow">
       <v-toolbar-title>
-        Cotizaciones
+        Cotizaciones  {{ getFirma?.firma }}  
       </v-toolbar-title>
 
 
       <!--v-btn icon="mdi-magnify"></v-btn-->
-      <v-btn icon="mdi-plus" @click="irACotizacion(-1)"></v-btn>
+      <a :href="'https://cotizador.gruvial.com.ar/crear-cotizacion'" target="_blank">
+        <v-btn icon="mdi-plus"></v-btn>
+      </a>
 
     </v-toolbar>
   
@@ -33,7 +67,7 @@
             <th class="text-left" @click="changeOrder('id')">
               ID
             </th>
-            <th class="text-left" @click="changeOrder('fecha')">
+            <th class="text-left" @click="changeOrder('updated_at')">
                 Fecha
             </th>
             <th class="text-left" @click="changeOrder('razon_social')">
@@ -53,9 +87,6 @@
             </th>
             <th class="text-left" @click="changeOrder('localidad')">
                 Localidad
-            </th>
-            <th class="text-left" @click="changeOrder('updated_at')">
-              Ultima Actualizacion
             </th>
           </tr>
         </thead>
@@ -81,7 +112,7 @@
             v-show="!loading"
           >
             <td>
-                <a :href="'https://gruvial.com.ar/cotizador/modificar-cotizaciones/'+item.id" target="_blank">
+                <a :href="'https://cotizador.gruvial.com.ar/modificar-cotizaciones/'+item.id" target="_blank">
                     <v-btn
                     size="small"
                         icon="mdi-pencil"
@@ -100,7 +131,7 @@
                 </a>
             </td>
             <td>{{ item.id }}</td>
-            <td>{{ item.fecha_f }}</td>
+            <td>{{ item.ultima_actualizacion }}</td>
             <td>{{ item.razon_social }}</td>
             <td>{{ item.estado }}</td>
             <td>
@@ -229,7 +260,6 @@
             <td>{{ item.observaciones_de_estado }}</td>
             <td>{{ item.nombre_de_la_persona }}</td>
             <td>{{ item.localidad }}</td>
-            <td>{{ item.ultima_actualizacion }}</td>
           </tr>
         </tbody>
       </v-table>
@@ -255,8 +285,9 @@
   import { useData } from '../composables/useData';
   import router from "@/router";
   import { orderBy } from "lodash";
+  import { cambiarOrden, crearOrdenActual } from '@/utils/sortUtils';
   
-  const { token, firma_id, headersAxios } = useData();
+  const { token, firma_id, headersAxios, getFirma } = useData();
   const ENDPOINT_PATH_API = ref(import.meta.env.VITE_ENDPOINT_PATH+'api/')
 
   //console.log(token);
@@ -265,7 +296,7 @@
   const mensajeError = ref('')
   const criterio = ref(null)
   const page = ref(1)
-  const sortBy = ref('updated_at')
+  const sortBy = ref('id')
   const orderDirection = ref('desc')
   const listaCotizaciones = ref()
   const generarServicios = ref(true)
@@ -273,8 +304,19 @@
   const trabajosPorRazonSocial = ref([])
   const loadingActualizarEstado = ref(false)
   const loading = ref(false)
-  const cant_paginas = ref(15)
+  const cant_paginas = ref(1)
+  const paginacion = ref(999999999)
+  const meses = ref([
+    "TODOS", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ])
+  const mes = ref(new Date().getMonth() + 1)
+  const anio = ref(new Date().getFullYear())
 
+  const anios = ref([
+  anio.value-1, anio.value, anio.value+1, 'TODOS'
+  ])
+  
   onMounted(() => {
     traerCotizaciones()  
   })
@@ -321,7 +363,7 @@
     const irACotizacion = (item) => {
         let destino = null
         destino = '/trabajo/'+item.trabajo_encabezado_id
-        router.push(destino);
+        return destino;
       }
 
     const traerCotizaciones = async () => {
@@ -330,8 +372,11 @@
           page: page.value,
           criterio: criterio.value,
           orderBy: sortBy.value,
+          paginacion: paginacion.value,
           orderDirection: orderDirection.value,
           firma_id: firma_id.value,
+          mes: mes.value,
+          anio: anio.value,
       });
 
       let body = await axios.post(ENDPOINT_PATH_API.value + "cotizacion-listar", jsonCliente, {headers: headersAxios.value[0]});
@@ -349,19 +394,31 @@
       traerCotizaciones()
     }
 
+        // Crear una instancia de `ordenActual` utilizando la función de utilidades
+    const ordenActual = crearOrdenActual();
+
     const changeOrder = (field) => {
-      //console.log(sortBy.value)
-      if (field != sortBy.value) {
-        sortBy.value = field
-        orderDirection.value = 'asc'
-        page.value = 1
+      
+      if (paginacion.value == 999999999) {
+        cambiarOrden(listaCotizaciones.value, ordenActual.value, field);
       }
       else {
-        orderDirection.value = orderDirection.value == 'asc' ? 'desc' : 'asc'
+        /*
+        if (field != sortBy.value) {
+          sortBy.value = field
+          orderDirection.value = 'asc'
+          page.value = 1
+        }
+        else {
+          orderDirection.value = orderDirection.value == 'asc' ? 'desc' : 'asc'
+        }
+        traerServicios()
+        */
+      console.log('no se puede ordenar')
       }
-      traerCotizaciones()
+      
     } 
-    
+
     watch(
         () => criterio.value,
         (newValue, oldValue) => {
@@ -370,6 +427,29 @@
         }
     )   
     
+    watch(
+        () => paginacion.value,
+        (newValue, oldValue) => {
+          page.value = 1
+          traerCotizaciones()
+        }
+    )  
+
+    watch(
+        () => mes.value,
+        (newValue, oldValue) => {
+          page.value = 1
+          traerCotizaciones()
+        }
+    )  
+
+    watch(
+        () => anio.value,
+        (newValue, oldValue) => {
+          page.value = 1
+          traerCotizaciones()
+        }
+    )  
 
 
     async function modificarEstado(item) {

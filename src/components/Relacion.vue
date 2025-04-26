@@ -237,15 +237,12 @@
 
 
   //Valido el Formulario
-  const validate = () => {
-    const resul = formEncabezado.value.validate()
-
-    // Si el formulario es valido guardo los datos
-    if (valid) {
-      enviarFormEncabazado()
+    async function validate () {
+      await formEncabezado.value.validate()
+      if (valid.value || props.accion == 'B') {
+        enviarFormEncabazado()
+      }    
     }
-
-  };
 
   //Envio el Formulario
   async function enviarFormEncabazado() {
@@ -279,11 +276,13 @@
     }
     else {      
       if (props.accion == 'M') {
-        const body_update = await axios.put(ENDPOINT_PATH_API.value + "relacion/"+relacion_id.value, json, {headers: headersAxios.value[0]})
+        //const body_update = await axios.put(ENDPOINT_PATH_API.value + "relacion/"+relacion_id.value, json, {headers: headersAxios.value[0]})
+        const body_update = await axios.post(ENDPOINT_PATH_API.value + "relacion-update/"+relacion_id.value, json, {headers: headersAxios.value[0]})
         cod_mensaje = 'MM'
       }      
       if (props.accion == 'B') {
-        const body_update = await axios.delete(ENDPOINT_PATH_API.value + "relacion/"+relacion_id.value, json, {headers: headersAxios.value[0]})
+        //const body_update = await axios.delete(ENDPOINT_PATH_API.value + "relacion/"+relacion_id.value, json, {headers: headersAxios.value[0]})
+        const body_update = await axios.post(ENDPOINT_PATH_API.value + "relacion-delete/"+relacion_id.value, json, {headers: headersAxios.value[0]})
         cod_mensaje = 'MB'
       }
     }    

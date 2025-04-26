@@ -16,17 +16,17 @@
                 @click="ABMLinea('A', null)"
             >Insertar</v-btn> 
 
-
             <v-table>
                 <thead>
                 <tr>
                     <th class="text-left">Accion</th>
-                    <th class="text-left">id</th>
-                    <th class="text-left">Fecha de Pago</th>
-                    <th class="text-left">Tipo</th>
-                    <th class="text-left">Importe de pago</th>
-                    <th class="text-left">Cuenta de origen</th>
-                    <th class="text-left">Observaciones</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenPagos('id')">id</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenPagos('fecha_de_pago_f')">Fecha de Pago</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenPagos('tipo_de_cobro.tipo_de_cobro')">Tipo</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenPagos('concepto_de_sueldo.concepto')" v-show="esSueldo">Concepto</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenPagos('importe_de_pago')">Importe de pago</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenPagos('cuenta_de_origen.detalle_select')">Cuenta de origen</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenPagos('observaciones')">Observaciones</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -53,6 +53,7 @@
                     <td>{{ (item.id) }}</td>
                     <td>{{ item.fecha_de_pago }}</td>
                     <td>{{ (item.tipo_de_cobro.tipo_de_cobro) }}</td>
+                    <td v-show="esSueldo">{{ (item.concepto_de_sueldo?.concepto) }}</td>
                     <td>${{ formatoNumero(item.importe_de_pago) }}</td>
                     <td>{{ (item.cuenta_de_origen.detalle_select) }}</td>
                     <td>{{ item.observaciones }}</td>
@@ -163,12 +164,26 @@
                                 >
                                 </MoneyField> 
                             </v-col>
+                            <v-col cols="12" sm="6" md="4" v-if="esSueldo">
+                                <v-autocomplete
+                                    v-model="pago.concepto_de_sueldo.id"
+                                    :items="conceptos_de_sueldo"
+                                    :disabled="deshabilitarEdicionCamposABMPagos"
+                                    :rules="concepto_de_sueldo_idRules"
+                                    item-title="concepto"
+                                    item-value="id"
+                                    required
+                                    dense
+                                    filled
+                                    label="Concepto de sueldo *"
+                                ></v-autocomplete> 
+                            </v-col>
                         </v-row>
                             
 
                         <!-- INICIO CHEQUE -->
                         <v-row v-show="(tipo_de_cobro_id == 3 || tipo_de_cobro_id == 4)">
-                
+                            
                             <v-col cols="12" sm="6" md="4">
                                 <v-switch
                                     v-model="cheque_en_cartera"
@@ -176,11 +191,11 @@
                                     color="success"
                                 ></v-switch>
                             </v-col>
-                            <v-col cols="12" sm="6" md="4" v-if="cheque_en_cartera">
+                            <v-col cols="12" sm="6" md="4" v-if="cheque_en_cartera && cheques_en_cartera.length>0">
                                 <v-autocomplete
                                     v-model="cheque_id"
                                     :items="cheques_en_cartera"
-                                    :disabled="deshabilitarEdicionCamposABMCobros"
+                                    :disabled="deshabilitarEdicionCamposABMPagos"
                                     item-title="cheque"
                                     item-value="id"
                                     dense
@@ -194,7 +209,7 @@
                                 <v-col cols="12" sm="6" md="4">
                                     <v-text-field
                                         v-model="pago.cheque.numero_de_cheque"
-                                        :disabled="deshabilitarEdicionCamposABMCobros"
+                                        :disabled="deshabilitarEdicionCamposABMPagos"
                                         maxlength="30"
                                         counter="30"
                                         label="Nro de Cheque"
@@ -203,7 +218,7 @@
                                 </v-col>
                                 <!--v-col cols="12" sm="6" md="4">
                                     <v-text-field
-                                        :disabled="deshabilitarEdicionCamposABMCobros"
+                                        :disabled="deshabilitarEdicionCamposABMPagos"
                                         v-model="pago.cheque.fecha_de_emision_f"
                                         label="Fecha de Emisión *"
                                         type="date"
@@ -212,7 +227,7 @@
                                 </v-col-->
                                 <v-col cols="12" sm="6" md="4">
                                     <v-text-field
-                                        :disabled="deshabilitarEdicionCamposABMCobros"
+                                        :disabled="deshabilitarEdicionCamposABMPagos"
                                         v-model="pago.cheque.fecha_inicio_de_cobro_f"
                                         label="Fecha de Inicio de Pago *"
                                         type="date"
@@ -221,7 +236,7 @@
                                 </v-col>
                                 <v-col cols="12" sm="6" md="4">
                                     <v-text-field
-                                        :disabled="deshabilitarEdicionCamposABMCobros"
+                                        :disabled="deshabilitarEdicionCamposABMPagos"
                                         v-model="pago.cheque.fecha_de_vencimiento_f"
                                         label="Fecha de Vencimiento *"
                                         type="date"
@@ -240,7 +255,7 @@
 
                                 <v-col cols="12" sm="6" md="4" v-show="cheque_pagado">
                                     <v-text-field
-                                        :disabled="deshabilitarEdicionCamposABMCobros"
+                                        :disabled="deshabilitarEdicionCamposABMPagos"
                                         v-model="pago.cheque.fecha_de_cobro_f"
                                         label="Fecha de Pago"
                                         type="date"
@@ -251,7 +266,7 @@
                                     <v-select
                                         v-model="pago.cheque.causa_de_baja_de_cheque.id"
                                         :items="causas_de_bajas_de_cheques"
-                                        :disabled="deshabilitarEdicionCamposABMCobros"
+                                        :disabled="deshabilitarEdicionCamposABMPagos"
                                         item-title="causa_de_baja_de_cheque"
                                         item-value="id"
                                         label="Causa de No Pago"
@@ -275,7 +290,7 @@
                         </v-row>
                         
                         <v-row>                        
-                            <v-col cols="12" sm="12" md="12" v-show="Object.keys(facturas_de_compra).length>0"> 
+                            <v-col cols="12" sm="12" md="12" v-show="Object.keys(facturas_de_compra).length>0" class="mb-4"> 
                                 <p>Seleccione las facturas pagadas:</p>
                                 <v-checkbox class="checkbox_factura"                                    
                                 v-for="item in facturas_de_compra"
@@ -287,7 +302,9 @@
                             </v-col>
                         </v-row>       
 
-
+                        <v-row>                        
+                            <v-alert type="warning" v-show="error_importe">{{ error_importe }}</v-alert>
+                        </v-row>       
 
                         <v-spacer></v-spacer>
                         <v-btn
@@ -342,6 +359,7 @@
   import router from "@/router";
   import { isProxy, toRaw } from 'vue';
   import MoneyField from '../components/MoneyField.vue';
+  import { cambiarOrden, crearOrdenActual } from '@/utils/sortUtils';
 
 
   const props = defineProps({
@@ -382,6 +400,7 @@
   let tipo_de_cobro_id_original = ref(null)
   let txtNotificarCambioTipoDeCobro = ref(null)
   let confirmado = ref(false)
+  const compra_encabezado = ref(null)
   const cheque_en_cartera = ref(false)
   const cheque_pagado = ref(false)
   const cheques_en_cartera = ref(null)
@@ -398,15 +417,19 @@
   //Variables compras_encabezados
   const formPagos = ref(null) 
 
+  //Traigo los Datos de la Compra
+  const body_find = await axios.get(ENDPOINT_PATH_API.value + "compra-encabezado/"+compra_encabezado_id.value, {headers: headersAxios.value[0]})
+  compra_encabezado.value = body_find['data']['data']
+  const error_importe = ref(null)
+
   let json = JSON.stringify({ 
       compra_encabezado_id: compra_encabezado_id.value
   });
-
           
   //Traigo los Pagos
   let body = await axios.post(ENDPOINT_PATH_API.value + "compra-pago-listar", json, {headers: headersAxios.value[0]});
   let listaPagos = ref(body['data']);
-          
+  
   //Traigo cuentas
   let jsonCuentas = JSON.stringify({ 
       firma_id: firma_id.value,
@@ -423,11 +446,18 @@
   const body_tipos_de_cobros = await axios.get(ENDPOINT_PATH_API.value + "tipo-de-cobro", {headers: headersAxios.value[0]})
   let tipos_de_cobros = body_tipos_de_cobros['data']
 
+  //Traigo conceptos de sueldo
+  const body_conceptos_de_sueldo = await axios.get(ENDPOINT_PATH_API.value + "concepto-de-sueldo", {headers: headersAxios.value[0]})
+  let conceptos_de_sueldo = body_conceptos_de_sueldo['data']
+
 
   //Traigo causa de baja de cheques
   const body_causas_de_bajas_de_cheques = await axios.get(ENDPOINT_PATH_API.value + "causa-de-baja-de-cheque", {headers: headersAxios.value[0]})
   let causas_de_bajas_de_cheques = body_causas_de_bajas_de_cheques['data']
 
+  //Traigo los cheques en cartera
+  let body_chequesencartera = await axios.post(ENDPOINT_PATH_API.value + "cheques-en-cartera", jsonCuentas, {headers: headersAxios.value[0]})
+  cheques_en_cartera.value = body_chequesencartera['data']
 
   // ----- Inicio: Validación y envio del Formulario Encabezado
 
@@ -442,18 +472,35 @@
   ];
   const importe_de_pagoRules = [
     value => {
+        console.log('value')
+        console.log(value)
+        console.log('props.importe_de_compra')
+        console.log(props.importe_de_compra)
         if (!value) {
+            console.log('Es requerido')
             return 'Es requerido'
         }
         else {
-            if (value > (props.importe_de_compra*1.05) && props.controlarMontoDeImporte) {
+            let value_number = value.replace(",", '.')
+            value_number = Number(value_number)
+            console.log('value_number')
+            console.log(value_number)
+        if (value_number > (props.importe_de_compra*1.05) && props.controlarMontoDeImporte) {
                 return 'El importe del pago esta por encima del 5% del importe de la compra '
             }
         }
+        console.log('true')
     }
   ];
   const tipo_de_cobroRules = [
     v => !!v || 'Es requerido'
+  ];
+  const concepto_de_sueldo_idRules = [
+        value => {
+            if (!value && (compra_encabezado.value.plan_de_cuenta_id == 6 || compra_encabezado.value.plan_de_cuenta_id == 7)) {
+                return 'este valor es requerido'
+            }
+        }
   ];
 
   const chequeRules = [
@@ -468,12 +515,28 @@
   //Valido el Formulario
   async function validate () {
     const formValidado = await formPagos.value.validate()
-      if (validPago.value && ((pago.value.importe_de_pago < (props.importe_de_compra*1.05) && props.controlarMontoDeImporte) || !props.controlarMontoDeImporte)) {
-        enviarFormPago()
-        }    
+        console.log('-------------------------------------')
+        console.log('validPago.value')
+        console.log(validPago.value)
+        console.log('pago.value.importe_de_pago')
+        console.log(pago.value.importe_de_pago)
+        error_importe.value = null
+        if ((validPago.value && ((pago.value.importe_de_pago < (props.importe_de_compra*1.05) && props.controlarMontoDeImporte) || !props.controlarMontoDeImporte)) || accionABM.value == 'B') {
+            enviarFormPago()
+            }  
         else {
-            console.log(formValidado.valid)
+            if (pago.value.importe_de_pago > (props.importe_de_compra*1.05) && props.controlarMontoDeImporte && accionABM.value != 'B') {
+                error_importe.value = 'El importe del pago esta por encima del 5% del importe de la compra '
+            }
+            else {
+                error_importe.value = null
+            }
         }
+
+        console.log(props.controlarMontoDeImporte)
+        console.log(error_importe.value)
+        console.log(accionABM.value)
+        console.log(formValidado.valid)
     }
 
 
@@ -502,6 +565,7 @@
       fecha_de_pago: pago.value.fecha_de_pago_f,
       importe_de_pago: pago.value.importe_de_pago,
       tipo_de_cobro_id: tipo_de_cobro_id.value,
+      concepto_de_sueldo_id: pago.value.concepto_de_sueldo.id,
       observaciones: pago.value.observaciones,
       user_id: user_id.value,
       facturas: facturas.value,
@@ -522,11 +586,13 @@
       body_abm = await axios.post(ENDPOINT_PATH_API.value + "pago-de-compra", json, {headers: headersAxios.value[0]})
     }
     if (accionABM.value == 'M') {
-      body_abm = await axios.put(ENDPOINT_PATH_API.value + "pago-de-compra/"+pago_id.value, json, {headers: headersAxios.value[0]})
+      //body_abm = await axios.put(ENDPOINT_PATH_API.value + "pago-de-compra/"+pago_id.value, json, {headers: headersAxios.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "pago-de-compra-update/"+pago_id.value, json, {headers: headersAxios.value[0]})
     }  
     
     if (accionABM.value == 'B') {
-      body_abm = await axios.delete(ENDPOINT_PATH_API.value + "pago-de-compra/"+pago_id.value, json, {headers: headersAxios.value[0]})
+      //body_abm = await axios.delete(ENDPOINT_PATH_API.value + "pago-de-compra/"+pago_id.value, json, {headers: headersAxios.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "pago-de-compra-delete/"+pago_id.value, json, {headers: headersAxios.value[0]})
     }      
     mensaje.value = body_abm['data'].mensaje
 
@@ -555,6 +621,9 @@
                 id: null
             },
             tipo_de_cobro: {
+                id: null
+            },
+            concepto_de_sueldo: {
                 id: null
             },
             fecha_de_pago: null,
@@ -587,6 +656,7 @@
         cheque_pagado.value = false
         tipo_de_cobro_id_original.value = null
         botonABM.value = 'Insertar';
+        cheque_en_cartera.value = false
         deshabilitarEdicionCamposABMPagos.value = false    
         
     }
@@ -612,6 +682,12 @@
         
         if (pago.value.tipo_de_cobro == null) {
             pago.value.tipo_de_cobro = {
+                id: null
+            }
+        }  
+        
+        if (pago.value.concepto_de_sueldo == null) {
+            pago.value.concepto_de_sueldo = {
                 id: null
             }
         }  
@@ -644,6 +720,14 @@
 
 
         }  
+        
+        if (!pago.value.cheque.cuenta_emisora_id) {
+            cheque_en_cartera.value = true
+            cheque_id.value = pago.value.cheque.id
+        }
+        else {
+            cheque_en_cartera.value = false
+        }
     }
   }
 
@@ -676,12 +760,8 @@
     watch(
         () => cheque_en_cartera.value,
         async (newValue, oldValue) => {
-          if (newValue) {
-            let body_chequesencartera = await axios.get(ENDPOINT_PATH_API.value + "cheques-en-cartera", {headers: headersAxios.value[0]})
-            cheques_en_cartera.value = body_chequesencartera['data']
-          }
-          else {
-            cheque_id.value = false
+          if (!newValue) {
+            cheque_id.value = null
           }
         }
     ) 
@@ -728,6 +808,14 @@
         return texto
     })
 
+    const esSueldo = computed(() => {
+        let es_sueldo = compra_encabezado.value.plan_de_cuenta_id == 6 || compra_encabezado.value.plan_de_cuenta_id == 7 ? true : false
+        return es_sueldo
+    })
+
+
+    
+
     function formatoNumero(numero) {
         let decimal = {useGrouping: false }
         let moneda = { style: "currency", minimumFractionDigits: 2, maximumFractionDigits: 2 }
@@ -735,6 +823,16 @@
         return Number(numero).toLocaleString("es-AR", 'ARS')
 
     }
+
+    // Crear una instancia de `ordenActual` utilizando la función de utilidades
+    const ordenActual = crearOrdenActual();
+
+    // Usar la función importada para cambiar el orden de `cobros`
+    const cambiarOrdenPagos = (propiedad) => {
+    cambiarOrden(listaPagos.value, ordenActual.value, propiedad);
+    };
+
+
 </script>
 
 
@@ -743,5 +841,8 @@
     margin-bottom: -50px;
 }
 
+.pointer {
+  cursor: pointer;
+}
 
 </style>

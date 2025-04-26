@@ -6,7 +6,7 @@ import { useDataStore } from '../stores/DataStore';
 export const useData = () => {
 
     const DataStore = useDataStore();
-    const {isLogged, user, token, firma_id, firmas, headersAxios, headersAxiosFiles, user_id, mensajeStore, trabajo_encabezado_id, compra_encabezado_id, getRolDeUsusarioId, getOpcionesMenuPrincipal, getFirmasPorUsuario, getPermisosPorUsuario, getNotificacionesPorUsuario } = storeToRefs(DataStore);
+    const {isLogged, user, token, firma_id, firmas, headersAxios, headersAxiosFiles, user_id, mensajeStore, trabajo_encabezado_id, compra_encabezado_id, getRolDeUsusarioId, getOpcionesMenuPrincipal, getFirmasPorUsuario, getFirma, getPermisosPorUsuario, getNotificacionesPorUsuario } = storeToRefs(DataStore);
 
     const setearFirma = (id) => {
         DataStore.setearFirma(id);
@@ -56,6 +56,7 @@ export const useData = () => {
         getRolDeUsusarioId,
         getOpcionesMenuPrincipal,
         getFirmasPorUsuario,
+        getFirma,
         getPermisosPorUsuario,
         getNotificacionesPorUsuario,
         setearUser,

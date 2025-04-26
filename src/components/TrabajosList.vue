@@ -1,15 +1,26 @@
 <template>
+    <v-row>
 
-    <v-switch
-      v-model="mostrar_canceldos"
-      label="Mostrar cancelados"
-      color="success"
-    ></v-switch>  
+      <v-col cols="6" sm="4" md="3">
+        <v-switch
+        v-model="mostrar_canceldos"
+        label="Mostrar finalizados y cancelados"
+        color="success"
+        ></v-switch>  
+      </v-col>
+      <v-col cols="6" sm="4" md="2">
+          <v-select
+          v-model="paginacion"
+          label="Cant. por Página"
+          :items="[10,20,50,100,999999999]"
+        ></v-select>
+      </v-col>
+    </v-row>
     <v-toolbar color="yellow">
 
 
       <v-toolbar-title>
-        Trabajos
+        Trabajos {{ getFirma?.firma }}  
       </v-toolbar-title>
 
       <v-autocomplete
@@ -24,7 +35,7 @@
       ></v-autocomplete>
 
       <!--v-btn icon="mdi-magnify"></v-btn-->
-      <v-btn icon="mdi-plus" @click="irATrabajo(-1)"></v-btn>
+      <v-btn icon="mdi-plus" :to="irATrabajo(-1)"></v-btn>
 
     </v-toolbar>
   
@@ -37,31 +48,37 @@
             <th class="text-left">
               Accion
             </th>
-            <th class="text-left" @click="changeOrder('id')">
+            <th class="text-left pointer" @click="changeOrder('id')">
               ID
             </th>
-            <th class="text-left" @click="changeOrder('cliente')">
+            <th class="text-left pointer" @click="changeOrder('cliente')">
               Cliente
             </th>
-            <th class="text-left" @click="changeOrder('fecha_inicio')">
+            <th class="text-left pointer" @click="changeOrder('es_mensual')">
+              Es Mensual
+            </th>
+            <th class="text-left pointer" @click="changeOrder('cliente')">
+              Observaciones
+            </th>
+            <th class="text-left pointer" @click="changeOrder('fecha_inicio')">
               Fecha de Inicio
             </th>
-            <th class="text-left" @click="changeOrder('updated_at')">
+            <th class="text-left pointer" @click="changeOrder('updated_at')">
               Ultima Actualizacion
             </th>
-            <th class="text-right" @click="changeOrder('importe')">
-              Importe
+            <th class="text-right pointer" @click="changeOrder('importe')">
+              Servicios Realizados
             </th>
-            <th class="text-right" @click="changeOrder('facturado')">
+            <th class="text-right pointer" @click="changeOrder('facturado')">
               Facturado
             </th>
-            <th class="text-right" @click="changeOrder('cobrado')">
+            <th class="text-right pointer" @click="changeOrder('cobrado')">
               Cobrado
             </th>
-            <th class="text-right" @click="changeOrder('deuda')">
+            <th class="text-right pointer" @click="changeOrder('deuda')">
               Deuda
             </th>
-            <th class="text-right" @click="changeOrder('cant_trabajos_realizados_que_faltan')">
+            <th class="text-right pointer" @click="changeOrder('cant_trabajos_realizados_que_faltan')">
               Cant Servicios que faltan realizar
             </th>
           </tr>
@@ -78,7 +95,7 @@
           <tr
             v-for="item in listaTrabajos"
             :key="item.id"
-            v-bind:class="{ nopagado: !item.fecha_de_cancelacion && item.deuda > 0, pagado: !item.fecha_de_cancelacion && item.deuda == 0 && item.cobrado, cancelado: item.fecha_de_cancelacion, encero: item.importe == 0 && item.deuda == 0, serviciosporrealizar: item.cant_trabajos_realizados_que_faltan > 0 }"
+            v-bind:class="colorFila(item)"
             v-show="!loading"
           >
             <td>
@@ -86,12 +103,14 @@
               size="small"
                 icon="mdi-pencil"
                 color="yellow"
-                @click="irATrabajo(item.id)"
+                :to="irATrabajo(item.id)"
               ></v-btn> 
               
             </td>
             <td>{{ item.id }}</td>
             <td>{{ item.cliente }}</td>
+            <td>{{ item.es_mensual }}</td>
+            <td>{{ item.observaciones }}</td>
             <td>{{ item.fecha_inicio_format }}</td>
             <td>{{ item.ultima_actualizacion }}</td>
             <td class="text-right">$ {{  Number(item.importe).toLocaleString("es-AR", 'ARS') }}</td>
@@ -125,7 +144,7 @@
   import router from "@/router";
   import { orderBy } from "lodash";
   
-  const { token, firma_id, headersAxios } = useData();
+  const { token, firma_id, headersAxios, getFirma } = useData();
   const ENDPOINT_PATH_API = ref(import.meta.env.VITE_ENDPOINT_PATH+'api/')
   //console.log(token);
   const error = ref(false);
@@ -138,6 +157,7 @@
   const loading = ref(false)
   const cant_paginas = ref(1)
   const mostrar_canceldos = ref(false)
+  const paginacion = ref(999999999)
   
   
   onMounted(() => {
@@ -163,7 +183,7 @@
   */
           
     const irATrabajo = (id) => {
-        router.push("/trabajo/"+id);
+        return "/trabajo/"+id
 
       }
 
@@ -176,7 +196,9 @@
           cliente_id: cliente_id.value,
           orderBy: sortBy.value,
           orderDirection: orderDirection.value,
-          mostrar_canceldos: mostrar_canceldos.value
+          mostrar_canceldos: mostrar_canceldos.value,
+          paginacion: paginacion.value,
+
       });
 
       let body = await axios.post(ENDPOINT_PATH_API.value + "trabajo-encabezado-listar", jsonCliente, {headers: headersAxios.value[0]});
@@ -225,6 +247,13 @@
           traerTrabajos()
         }
     ) 
+    watch(
+        () => paginacion.value,
+        (newValue, oldValue) => {
+          page.value = 1
+          traerTrabajos()
+        }
+    )   
 
 function facturado_cobrado(facturado, cobrado) {
   var res = facturado-cobrado
@@ -232,26 +261,58 @@ function facturado_cobrado(facturado, cobrado) {
   return res
 }
 
+function colorFila(item) {
+  let clase = null
+  if (item.fecha_de_cancelacion) {
+    clase = 'negro'
+  }
+  else {
+    if (item.deuda > 1000) {
+      clase = 'rojo'
+    }
+    else {
+      if (item.deuda > -1000) {
+        clase = 'verde'
+      }
+      else {
+        clase = 'amarillo'
+      }
+    }
+
+    if (item.cant_trabajos_realizados_que_faltan > 0 || item.importe == 0) {
+      clase = 'amarillo'
+    }
+  }
+
+
+  return clase
+
+}
 
 
 </script>
 <style scoped>
-.nopagado {
+.rojo {
   background-color: #ffbdc3;
 }
-.pagado {
+.verde {
   background-color: #c4ffbd;
 }
-.encero {
+.blanco {
   background-color: #ffffff;
 }
 
-.serviciosporrealizar {
+.amarillo {
   background-color: #fad531;
 }
 
-.cancelado {
+.negro {
   background-color: #666;
   color: white;
+}
+
+
+.pointer {
+  cursor: pointer;
 }
 </style>

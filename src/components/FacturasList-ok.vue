@@ -1,5 +1,34 @@
 <template>
-  
+    <v-row>
+
+      <v-col cols="6" sm="4" md="3">
+        <v-btn-toggle  v-model="tipo_de_operacion"  color="deep-purple-accent-3"  rounded="0"  group >  
+          <v-btn value="COMPRA">Compra</v-btn> 
+          <v-btn value="VENTA">Venta</v-btn> 
+          <v-btn value="TODAS">Todas</v-btn> 
+        </v-btn-toggle> 
+      </v-col>
+
+      <v-col cols="6" sm="4" md="2">
+          <v-select
+          v-model="paginacion"
+          label="Cant. por Página"
+          :items="[10,20,50,100,999999999]"
+        ></v-select>
+      </v-col>
+
+      <v-col cols="6" sm="4" md="2">
+        <v-select
+          v-model="tipo_de_factura_id"
+          :items="tipos_de_facturas"
+          item-title="tipo_de_factura"
+          item-value="id"
+          required="required"
+          label="Tipo de Factura"
+      ></v-select>     
+      </v-col>
+    </v-row>
+
     <v-text-field
         v-model="criterio"
         label="criterio de búsqueda"
@@ -17,7 +46,7 @@
     </v-toolbar>
   
       <v-alert v-if="error" type="error">{{ mensajeError }}</v-alert>
-
+      <!--pre>listaFacturas.value {{ listaFacturas }}</pre-->
       
       <v-table>
         <thead>
@@ -25,37 +54,43 @@
             <th class="text-left">
               Accion
             </th>
-            <th class="text-left" @click="changeOrder('id')">
+            <th class="text-left pointer" @click="changeOrder('id')">
               ID
             </th>
-            <th class="text-left" @click="changeOrder('trabajo')">
-              Trabajo
-            </th>
-            <th class="text-left" @click="changeOrder('razon_social')">
-              Razón Social
-            </th>
-            <th class="text-left" @click="changeOrder('tipo_de_factura')">
+            <th class="text-left pointer" @click="changeOrder('tipo_de_operacion')">
               Tipo
             </th>
-            <th class="text-left" @click="changeOrder('fecha_de_factura')">
+            <th class="text-left pointer" @click="changeOrder('operacion')">
+              Trabajo/Compra
+            </th>
+            <th class="text-left pointer" @click="changeOrder('rs.razon_social')">
+              Razón Social
+            </th>
+            <th class="text-left pointer" @click="changeOrder('tipo_de_factura')">
+              Tipo
+            </th>
+            <th class="text-left pointer" @click="changeOrder('fecha_de_factura')">
               Fecha
             </th>
-            <th class="text-left" @click="changeOrder('nro_de_factura')">
+            <th class="text-left pointer" @click="changeOrder('nro_de_factura')">
               Nro
             </th>
-            <th class="text-right" @click="changeOrder('importe_total')">
+            <th class="text-right pointer" @click="changeOrder('importe_total')">
               Importe
             </th>
-            <th class="text-left" @click="changeOrder('descripcion')">
+            <th class="text-right pointer" @click="changeOrder('importe_cobrado')">
+              Importe Cobrado
+            </th>
+            <th class="text-left pointer" @click="changeOrder('descripcion')">
                 Descripción
             </th>
-            <th class="text-left" @click="changeOrder('archivo')">
+            <th class="text-left pointer" @click="changeOrder('archivo')">
               Archivo
             </th>
-            <th class="text-left" @click="changeOrder('estado')">
+            <th class="text-left pointer" @click="changeOrder('estado')">
               Estado
             </th>
-            <th class="text-left" @click="changeOrder('updated_at')">
+            <th class="text-left pointer" @click="changeOrder('updated_at')">
               Ultima Actualizacion
             </th>
           </tr>
@@ -73,6 +108,8 @@
             v-for="item in listaFacturas"
             :key="item.id"
             v-bind:class="{ 
+                notadecredito: item.estado == 'NOTA DE CREDITO', 
+                pagadademas: item.estado == 'PAGADA DE MAS', 
                 pagadaparcial: item.estado == 'PAGADA PARCIAL', 
                 pagada: item.estado == 'PAGADA',
                 nopagada: item.estado == 'NO PAGADA',
@@ -85,17 +122,25 @@
               size="small"
                 icon="mdi-pencil"
                 color="yellow"
-                @click="irAFactura(item)"
+                :to="irAFactura(item)"
               ></v-btn> 
+              <!--v-btn
+              size="small"
+                icon="mdi-pencil"
+                color="yellow"
+                @click="irAFactura(item)"
+              ></v-btn--> 
               
             </td>
             <td>{{ item.id }}</td>
-            <td>{{ item.trabajo }}</td>
+            <td>{{ item.tipo_de_operacion }}</td>
+            <td>{{ item.operacion }}</td>
             <td>{{ item.razon_social }}</td>
             <td>{{ item.tipo_de_factura }}</td>
             <td>{{ item.fecha_de_factura_f }}</td>
             <td>{{ item.nro_de_factura }}</td>
             <td class="text-right">$ {{  Number(item.importe_total).toLocaleString("es-AR", 'ARS') }}</td>
+            <td class="text-right">$ {{  Number(item.importe_cobrado).toLocaleString("es-AR", 'ARS') }}</td>
             <td>{{ item.descripcion }}</td>
             <td>
                 <a :href="item.archivo" target="_blank" v-if="item.archivo">
@@ -149,6 +194,11 @@
   const loading = ref(false)
   const cant_paginas = ref(1)
   const criterio = ref(null)
+  const tipo_de_operacion = ref('TODAS')
+  const tipo_de_factura_id = ref(null)
+  const paginacion = ref(50)
+  
+  
 
   
   onMounted(() => {
@@ -159,6 +209,9 @@
   let body_razones_sociales = await axios.get(ENDPOINT_PATH_API.value + "razon-social", {headers: headersAxios.value[0]})
   let razones_sociales = ref(body_razones_sociales['data'])
 
+  //Traigo tipos de facturas
+  const body_tipos_de_facturas = await axios.get(ENDPOINT_PATH_API.value + "tipo-de-factura", {headers: headersAxios.value[0]})
+  let tipos_de_facturas = body_tipos_de_facturas['data']
   /*
   const convertir = (valor) => {
     let resultado = '';
@@ -175,8 +228,8 @@
           
     const irAFactura = (item) => {
         let destino = null
-        destino = '/trabajo/'+item.trabajo_encabezado_id
-        router.push(destino);
+        destino = item.tipo_de_operacion == 'VENTA' ? '/trabajo/'+item.operacion_id : '/compra/'+item.operacion_id
+        return destino;
       }
 
     const traerFacturas = async () => {
@@ -188,6 +241,11 @@
           orderDirection: orderDirection.value,
           firma_id: firma_id.value,
           criterio: criterio.value,
+          tipo_de_operacion: tipo_de_operacion.value,
+          tipo_de_factura_id: tipo_de_factura_id.value,
+          paginacion: paginacion.value,
+          
+          
       });
 
       let body = await axios.post(ENDPOINT_PATH_API.value + "factura-listar", jsonCliente, {headers: headersAxios.value[0]});
@@ -236,10 +294,33 @@
           }
         }
     )   
-
+    watch(
+        () => tipo_de_operacion.value,
+        (newValue, oldValue) => {
+          page.value = 1
+          traerFacturas()
+        }
+    )   
+    watch(
+        () => tipo_de_factura_id.value,
+        (newValue, oldValue) => {
+          page.value = 1
+          traerFacturas()
+        }
+    )   
+    
+    
     watch(
         () => page.value,
         (newValue, oldValue) => {
+          traerFacturas()
+        }
+    )  
+
+    watch(
+        () => paginacion.value,
+        (newValue, oldValue) => {
+          page.value = 1
           traerFacturas()
         }
     )  
@@ -256,8 +337,18 @@
 .pagadaparcial {
   background-color: #f7c308;
 }
+.pagadademas {
+  background-color: #dbf708;
+}
+.notadecredito {
+  background-color: #b9b3b3;
+}
 .anulada {
   background-color: #666;
   color: white;
+}
+
+.pointer {
+  cursor: pointer;
 }
 </style>

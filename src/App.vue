@@ -1,4 +1,5 @@
 <template>
+  
   <v-app id="inspire">
     <v-navigation-drawer
       v-model="drawer"
@@ -12,6 +13,9 @@
           :value="index"
           :to="item.link"
         >
+          <template v-slot:prepend>
+            <v-icon :icon="item.icon"></v-icon>
+          </template>
           <v-list-item-title>{{ item.title }}</v-list-item-title>
         </v-list-item>
       </v-list>

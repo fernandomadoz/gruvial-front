@@ -32,6 +32,10 @@ const props = defineProps({
     errorMessage: {
         String,
         default: null
+    },
+    density: {
+        String,
+        default: 'default'
     }
 })
 const { inputRef, formattedValue, setOptions, setValue } = useCurrencyInput(props.options)
@@ -65,6 +69,7 @@ watch(
         class="without-ring"
         :rules="rules"
         ref="inputRef"
+        :density="density"
     ></v-text-field> 
     <div v-show="errorMessage!=null" class="text-red pb-10">Error: {{ errorMessage }}</div>
 </template>

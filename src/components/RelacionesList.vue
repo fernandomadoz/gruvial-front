@@ -1,5 +1,35 @@
 <template>
   
+    <v-row>
+      <v-col cols="10" sm="10" md="10">
+        <v-btn-toggle v-model="mes">
+          <v-btn
+            v-for="(nombremes, index) in meses"
+            :key="index"
+            :value="index" 
+            color="primary"
+            density="compact"
+          >
+            {{ nombremes }}
+          </v-btn>
+        </v-btn-toggle>
+      </v-col>
+      <v-col cols="2" sm="2" md="2">
+        <v-btn-toggle v-model="anio">
+          <v-btn
+            v-for="(nombreanio) in anios"
+            :key="nombreanio"
+            :value="nombreanio" 
+            color="primary"
+            size="small"
+            density="compact"
+          >
+            {{ nombreanio }}
+          </v-btn>
+        </v-btn-toggle>
+      </v-col>
+    </v-row>
+
     <v-toolbar color="yellow">
 
       <v-toolbar-title>
@@ -31,7 +61,7 @@
       ></v-autocomplete>
 
       <!--v-btn icon="mdi-magnify"></v-btn-->
-      <v-btn icon="mdi-plus" @click="irArelacion('A', -1)"></v-btn>
+      <v-btn icon="mdi-plus" :to="irArelacion('A', -1)"></v-btn>
 
     </v-toolbar>
   
@@ -43,25 +73,25 @@
             <th class="text-left">
               Accion
             </th>
-            <th class="text-left" @click="changeOrder('fecha')">
+            <th class="text-left pointer" @click="changeOrder('fecha')">
               Origen
             </th>
-            <th class="text-left" @click="changeOrder('fecha')">
+            <th class="text-left pointer" @click="changeOrder('fecha')">
               Fecha
             </th>
-            <th class="text-left" @click="changeOrder('firma_origen')">
+            <th class="text-left pointer" @click="changeOrder('firma_origen')">
               Origen
             </th>
-            <th class="text-left" @click="changeOrder('firma_destino')">
+            <th class="text-left pointer" @click="changeOrder('firma_destino')">
               Destino
             </th>
-            <th class="text-left" @click="changeOrder('detalle')">
+            <th class="text-left pointer" @click="changeOrder('detalle')">
               Detalle
             </th>
-            <th class="text-right" @click="changeOrder('importe_total')">
+            <th class="text-right pointer" @click="changeOrder('importe_total')">
               Importe
             </th>
-            <th class="text-right" @click="changeOrder('importe_total')">
+            <th class="text-right pointer" @click="changeOrder('importe_total')">
               Importe Acumulado
             </th>
           </tr>
@@ -76,14 +106,14 @@
                 size="small"
                 icon="mdi-pencil"
                 color="yellow"
-                @click="irArelacion('M', item)"
+                :to="irArelacion('M', item)"
               ></v-btn> 
               <v-btn
                 v-if="item.id_padre>0"
                 size="small"
                 icon="mdi-close-circle"
                 color="yellow"
-                @click="irArelacion('B', item)"
+                :to="irArelacion('B', item)"
               ></v-btn> 
               
             </td>
@@ -120,6 +150,16 @@
   const orderDirection = ref('asc')
   const listaRelaciones = ref()
 
+  const meses = ref([
+    "TODOS", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ])
+  const mes = ref(new Date().getMonth() + 1)
+  const anio = ref(new Date().getFullYear())
+
+  const anios = ref([
+  anio.value-1, anio.value, anio.value+1, 'TODOS'
+  ])
   
   const props = defineProps({
     cod_mensaje: {
@@ -187,8 +227,9 @@
             }
           }
         }
+      console.log(destino)
         
-        router.push(destino);
+        return destino;
       }
 
     const traerRelaciones = async () => {
@@ -199,7 +240,10 @@
             firma_origen_id: firma_origen_id.value,
             firma_destino_id: firma_destino_id.value,
             orderBy: sortBy.value,
-            orderDirection: orderDirection.value
+            orderDirection: orderDirection.value,
+            mes: mes.value,
+            anio: anio.value,
+            
         });
 
         let body = await axios.post(ENDPOINT_PATH_API.value + "relacion-listar", jsonCliente, {headers: headersAxios.value[0]});
@@ -246,6 +290,23 @@
         }
     )   
 
+
+    watch(
+        () => mes.value,
+        (newValue, oldValue) => {
+          page.value = 1
+          traerRelaciones()
+        }
+    )  
+
+    watch(
+        () => anio.value,
+        (newValue, oldValue) => {
+          page.value = 1
+          traerRelaciones()
+        }
+    )  
+    
     function getTime() {
     setTimeout(() => {
       setearMensajeStore(null)
@@ -266,5 +327,9 @@
 .anulada {
   background-color: #666;
   color: white;
+}
+
+.pointer {
+  cursor: pointer;
 }
 </style>

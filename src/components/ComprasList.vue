@@ -26,12 +26,12 @@
     <v-toolbar color="yellow">
 
       <v-toolbar-title>
-        Compras | Gastos | Inversiones
+        Compras | Gastos | Inversiones {{ getFirma?.firma }}  
       </v-toolbar-title>
 
 
       <!--v-btn icon="mdi-magnify"></v-btn-->
-      <v-btn icon="mdi-plus" @click="irACompra(-1)"></v-btn>
+      <v-btn icon="mdi-plus" :to="irACompra(-1)"></v-btn>
 
     </v-toolbar>
   
@@ -44,37 +44,37 @@
             <th class="text-left">
               Accion
             </th>
-            <th class="text-left" @click="changeOrder('id')">
+            <th class="text-left pointer" @click="changeOrder('id')">
               ID
             </th>
-            <th class="text-left" @click="changeOrder('proveedor')">
+            <th class="text-left pointer" @click="changeOrder('proveedor')">
               Proveedor
             </th>
-            <th class="text-left" @click="changeOrder('detalle')">
+            <th class="text-left pointer" @click="changeOrder('detalle')">
               Detalle
             </th>
-            <th class="text-left" @click="changeOrder('plan_de_cuenta')">
+            <th class="text-left pointer" @click="changeOrder('plan_de_cuenta')">
               Clasificación
             </th>
-            <th class="text-left" @click="changeOrder('fecha_de_compra')">
+            <th class="text-left pointer" @click="changeOrder('fecha_de_compra')">
               Fecha de Compra
             </th>
-            <th class="text-left" @click="changeOrder('updated_at')">
+            <th class="text-left pointer" @click="changeOrder('updated_at')">
               Ultima Actualizacion
             </th>
-            <th class="text-right" @click="changeOrder('mensual')">
+            <th class="text-right pointer" @click="changeOrder('mensual')">
               Es Mensual
             </th>
-            <th class="text-right" @click="changeOrder('importe')">
+            <th class="text-right pointer" @click="changeOrder('importe')">
               Importe
             </th>
-            <!--th class="text-right" @click="changeOrder('facturado')">
+            <!--th class="text-right pointer" @click="changeOrder('facturado')">
               Facturado
             </th>
-            <th class="text-right" @click="changeOrder('cobrado')">
+            <th class="text-right pointer" @click="changeOrder('cobrado')">
               Pagado
             </th-->
-            <th class="text-right" @click="changeOrder('deuda')">
+            <th class="text-right pointer" @click="changeOrder('deuda')">
               Deuda
             </th>
           </tr>
@@ -99,7 +99,7 @@
               size="small"
                 icon="mdi-pencil"
                 color="yellow"
-                @click="irACompra(item.id)"
+                :to="irACompra(item.id)"
               ></v-btn> 
               
             </td>
@@ -141,7 +141,7 @@
   import router from "@/router";
   import { orderBy } from "lodash";
   
-  const { token, firma_id, headersAxios } = useData();
+  const { token, firma_id, headersAxios, getFirma } = useData();
   const ENDPOINT_PATH_API = ref(import.meta.env.VITE_ENDPOINT_PATH+'api/')
   //console.log(token);
   const error = ref(false);
@@ -179,7 +179,7 @@
   */
           
     const irACompra = (id) => {
-        router.push("/compra/"+id);
+        return "/compra/"+id
 
       }
 
@@ -275,5 +275,9 @@ function facturado_cobrado(facturado, cobrado) {
 }
 .pagado {
   background-color: #c4ffbd;
+}
+
+.pointer {
+  cursor: pointer;
 }
 </style>

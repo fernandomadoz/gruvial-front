@@ -60,7 +60,7 @@
                         </a>
                     </td>
                     <td>{{ (item.id) }}</td>
-                    <td>{{ (item.created_at) }} </td>
+                    <td>{{ (item.created_at_f) }} </td>
                     <td>{{ (item.razon_social) }} </td>
                     <td>
                         

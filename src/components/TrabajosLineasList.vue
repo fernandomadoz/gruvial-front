@@ -22,17 +22,17 @@
                 <thead>
                 <tr>
                     <th class="text-left">Accion</th>
-                    <th class="text-left">id</th>
-                    <th class="text-left">Maquina</th>
-                    <!--th class="text-left">Lugar de trabajo</th-->
-                    <th class="text-left">Fecha Inicio</th>
-                    <th class="text-left">Fecha Fin</th>
-                    <th class="text-left">Tipo de Trabajo</th>
-                    <!--th class="text-left">Cantidad</th-->
-                    <th class="text-left">Importe</th>
-                    <th class="text-left">observaciones</th>
-                    <th class="text-left">Confirmado</th>
-                    <th class="text-left">Realizado</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenLineas('id')">Orden de Servicio</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenLineas('id')">id</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenLineas('maquina.nombre_de_maquina')">Maquina</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenLineas('fecha_inicio_f')">Fecha Inicio</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenLineas('fecha_fin_f')">Fecha Fin</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenLineas('tipo_de_trabajo.tipo_de_trabajo')">Tipo de Trabajo</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenLineas('importe')">Importe</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenLineas('importe_cobrado')">Importe Cobrado</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenLineas('observaciones')">observaciones</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenLineas('trabajo_confirmado')">Confirmado</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenLineas('trabajo_realizado')">Realizado</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -60,14 +60,49 @@
                             v-bind="props"
                         ></v-btn>
                     </td>
+                    <td>
+                         <a :href="ENDPOINT_PATH+'remito-de-servicio/'+item.id " target="_blank">
+                        <v-btn
+                            size="small"
+                            icon="mdi-file-document-edit"
+                            color="blue"
+                        ></v-btn>
+                        </a>
+                    </td>
                     <td>{{ (item.id) }}</td>
                     <td>{{ (item.maquina?.nombre_de_maquina) }}</td>
-                    <!--td>{{ (item.lugar_de_trabajo) }}</td-->
                     <td>{{ item.fecha_inicio }}</td>
                     <td>{{ item.fecha_fin }}</td>
                     <td>{{ (item.tipo_de_trabajo?.tipo_de_trabajo) }}</td>
-                    <!--td>{{ (item.cantidad_unidades_trabajo) }}</td-->
-                    <td>${{ formatoNumero(item.importe) }}</td>
+                    <td valign="top" class="text-h6">${{ formatoNumero(item.importe) }}</td>
+                    <td valign="top" class="text-h6">${{ formatoNumero(item.importe_cobrado) }}<br>
+                        <v-expansion-panels v-if="item.cobros.length>4">
+                            <v-expansion-panel v-bind:class="classFactura(item)" >
+                                <v-expansion-panel-title>Cobros asociados</v-expansion-panel-title>
+                                <v-expansion-panel-text>
+                                    <v-chip
+                                        size="small"
+                                        v-for="cobro in item.cobros"
+                                        :key="cobro"
+                                        class="m-1"
+                                        >
+                                        ${{ formatoNumero(cobro.importe_total_con_retenciones) }}&nbsp; (Cobro id: {{ cobro.id }})
+                                    </v-chip>
+                                </v-expansion-panel-text>
+                            </v-expansion-panel>
+                        </v-expansion-panels>
+
+                        
+                        <v-chip v-else
+                            size="small"
+                            v-for="cobro in item.cobros"
+                            :key="cobro"
+                            class="m-1"
+                            >
+                            ${{ formatoNumero(cobro.importe_total_con_retenciones) }}&nbsp; (Cobro id: {{ cobro.id }})
+                        </v-chip>
+
+                    </td>
                     <td>{{ item.observaciones }}</td>
                     <td>{{ item.trabajo_confirmado }}</td>
                     <td>{{ item.trabajo_realizado }}</td>
@@ -229,8 +264,8 @@
                                 <v-textarea
                                     :disabled="deshabilitarEdicionCamposABMEncabezado"
                                     label="Observaciones"
-                                    counter="250"
-                                    maxlength="250"
+                                    counter="500"
+                                    maxlength="500"
                                     v-model="trabajo_linea.observaciones"
                                 ></v-textarea>
                             </v-col>
@@ -291,9 +326,11 @@
   import router from "@/router";
   import { isProxy, toRaw } from 'vue';
   import MoneyField from '../components/MoneyField.vue';
+  import { cambiarOrden, crearOrdenActual } from '@/utils/sortUtils';
 
   const { token, headersAxios, trabajo_encabezado_id, user_id, firma_id } = useData();
   const ENDPOINT_PATH_API = ref(import.meta.env.VITE_ENDPOINT_PATH+'api/')
+  const ENDPOINT_PATH = ref(import.meta.env.VITE_ENDPOINT_PATH)
   const error = ref(false);
   const mensaje = ref(null);
   const loading = ref(false)
@@ -355,7 +392,7 @@
   let maquinas = body_maquinas['data']
 
   //Traigo tipos de trabajos
-  const body_tipos_de_trabajos = await axios.get(ENDPOINT_PATH_API.value + "tipo_de_trabajo", {headers: headersAxios.value[0]})
+  const body_tipos_de_trabajos = await axios.post(ENDPOINT_PATH_API.value + "tipo-de-trabajo-por-firma", jsonMaquinas, {headers: headersAxios.value[0]})
   let tipos_de_trabajos = body_tipos_de_trabajos['data']
 
   //Traigo tipos de trabajos
@@ -428,7 +465,7 @@
   //Valido el Formulario
   async function validate () {
     await formServicios.value.validate()
-    if (validServicio.value) {
+    if (validServicio.value || accionABM.value == 'B') {
         enviarFormServicio()
     }    
   }
@@ -479,11 +516,13 @@
       body_abm = await axios.post(ENDPOINT_PATH_API.value + "trabajo-linea", json, {headers: headersAxios.value[0]})
     }
     if (accionABM.value == 'M') {
-      body_abm = await axios.put(ENDPOINT_PATH_API.value + "trabajo-linea/"+trabajo_linea_id.value, json, {headers: headersAxios.value[0]})
+      //body_abm = await axios.put(ENDPOINT_PATH_API.value + "trabajo-linea/"+trabajo_linea_id.value, json, {headers: headersAxios.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "trabajo-linea-update/"+trabajo_linea_id.value, json, {headers: headersAxios.value[0]})
     }  
     
     if (accionABM.value == 'B') {
-      body_abm = await axios.delete(ENDPOINT_PATH_API.value + "trabajo-linea/"+trabajo_linea_id.value, json, {headers: headersAxios.value[0]})
+      //body_abm = await axios.delete(ENDPOINT_PATH_API.value + "trabajo-linea/"+trabajo_linea_id.value, json, {headers: headersAxios.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "trabajo-linea-delete/"+trabajo_linea_id.value, json, {headers: headersAxios.value[0]})
     }      
     mensaje.value = body_abm['data'].mensaje
 
@@ -626,6 +665,15 @@ const vMyDirective = {
 
     }
 
+
+
+    // Crear una instancia de `ordenActual` utilizando la función de utilidades
+    const ordenActual = crearOrdenActual();
+
+    // Usar la función importada para cambiar el orden de `cobros`
+    const cambiarOrdenLineas = (propiedad) => {
+    cambiarOrden(listaLineas.value, ordenActual.value, propiedad);
+    };
 </script>
 
 
@@ -635,5 +683,10 @@ const vMyDirective = {
 }
 .realizado {
   background-color: #c4ffbd;
+}
+
+
+.pointer {
+  cursor: pointer;
 }
 </style>

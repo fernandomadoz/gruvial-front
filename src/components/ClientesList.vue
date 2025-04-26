@@ -15,7 +15,7 @@
 
 
       <!--v-btn icon="mdi-magnify"></v-btn-->
-      <v-btn icon="mdi-plus" @click="irAcliente('A', -1)"></v-btn>
+      <v-btn icon="mdi-plus" :to="irAcliente('A', -1)"></v-btn>
 
     </v-toolbar>
   
@@ -27,28 +27,28 @@
             <th class="text-left">
               Accion
             </th>
-            <th class="text-left" @click="changeOrder('nombre_o_razon_social')">
+            <th class="text-left pointer" @click="changeOrder('nombre_o_razon_social')">
                 Nombre o Razon Social
             </th>
-            <th class="text-left" @click="changeOrder('cuit_o_cuil')">
+            <th class="text-left pointer" @click="changeOrder('cuit_o_cuil')">
                 CUIT o CUIL
             </th>
-            <th class="text-left" @click="changeOrder('barrio')">
+            <th class="text-left pointer" @click="changeOrder('barrio')">
               Barrio
             </th>
-            <th class="text-right" @click="changeOrder('tipo_de_cliente')">
+            <th class="text-right pointer" @click="changeOrder('tipo_de_cliente')">
               Tipo de Cliente
             </th>
-            <th class="text-right" @click="changeOrder('condicion_iva')">
+            <th class="text-right pointer" @click="changeOrder('condicion_iva')">
               Condicion IVA
             </th>
-            <th class="text-right" @click="changeOrder('importe_total')">
+            <th class="text-right pointer" @click="changeOrder('importe_total')">
               Importe Acumulado
             </th>
-            <th class="text-left" @click="changeOrder('localidad')">
+            <th class="text-left pointer" @click="changeOrder('localidad')">
               Localidad
             </th>
-            <th class="text-left" @click="changeOrder('es_consumidor_final')">
+            <th class="text-left pointer" @click="changeOrder('es_consumidor_final')">
                 Consumidor final
             </th>
           </tr>
@@ -72,7 +72,7 @@
                 size="small"
                 icon="mdi-pencil"
                 color="yellow"
-                @click="irAcliente('M', item.id)"
+                :to="irAcliente('M', item.id)"
               ></v-btn> 
               <!--v-btn
                 size="small"
@@ -165,7 +165,7 @@
           
     const irAcliente = (accion, id) => {
         let destino = '/cliente/'+accion+'/'+id
-        router.push(destino);
+        return destino;
       }
 
     const traerClientes = async () => {
@@ -241,5 +241,10 @@
 .anulada {
   background-color: #666;
   color: white;
+}
+
+
+.pointer {
+  cursor: pointer;
 }
 </style>

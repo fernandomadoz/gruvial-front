@@ -23,6 +23,7 @@
                       :tipo="props.tipo" 
                       :lista="listaVencidos" 
                       :textoVacio="'No hay '+props.titulo+' vencidos'"
+                      tiempo="vencidos"
                       />
                   </v-window-item>
 
@@ -32,6 +33,7 @@
                       :tipo="props.tipo" 
                       :lista="listaHoy" 
                       :textoVacio="'No hay '+props.titulo+' para hoy'"
+                      tiempo="hoy"
                       />
                   </v-window-item>
 
@@ -41,6 +43,7 @@
                       :tipo="props.tipo" 
                       :lista="listaProximos" 
                       :textoVacio="'No hay '+props.titulo+' registrados para los proximos dias'"
+                      tiempo="proximos"
                     />              
                   </v-window-item>
 

@@ -21,12 +21,12 @@
                 <thead>
                 <tr>
                     <th class="text-left">Accion</th>
-                    <th class="text-left">id</th>
-                    <th class="text-left">Fecha de Pago</th>
-                    <th class="text-left">Tipo</th>
-                    <th class="text-left">Importe de pago</th>
-                    <th class="text-left">Cuenta de origen</th>
-                    <th class="text-left">Observaciones</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenPagos('id')">id</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenPagos('fecha_de_pago_f')">Fecha de Pago</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenPagos('tipo_de_cobro.tipo_de_cobro')">Tipo</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenPagos('importe_de_pago')">Importe de pago</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenPagos('cuenta_de_origen.detalle_select')">Cuenta de origen</th>
+                    <th class="text-left pointer"  @click="cambiarOrdenPagos('observaciones')">Observaciones</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -102,28 +102,13 @@
                         lazy-validation
                     >
                         <v-row>
-                            
-                            <v-col cols="12" sm="6" md="4">
-                                <!--v-autocomplete
-                                    v-model="pago.cuenta_de_origen.id"
-                                    :items="cuentas"
-                                    item-title="detalle_select"
-                                    item-value="id"
-                                    :disabled="deshabilitarEdicionCamposABMPagos"
-                                    dense
-                                    filled
-                                    label="Cuenta que Paga *"
-                                    :rules="cuentaRules"
-                                    required
-                                ></v-autocomplete-->      
-                            </v-col>
                             <v-col cols="12" sm="6" md="4">
                                 <v-autocomplete
                                     v-model="pago.cuenta_de_origen.id"
                                     :items="cuentas"
+                                    :disabled="deshabilitarEdicionCamposABMPagos"
                                     item-title="detalle_select"
                                     item-value="id"
-                                    :disabled="deshabilitarEdicionCamposABMPagos"
                                     dense
                                     filled
                                     label="Cuenta que Paga *"
@@ -169,14 +154,12 @@
                                     prefix="$"
                                     required
                                 ></v-text-field--> 
-                                
                                 <MoneyField
                                     :disabled="deshabilitarEdicionCamposABMPagos"
                                     v-model="pago.importe_de_pago"
                                     :rules="importe_de_pagoRules"
                                     :options="currencyOptions_general"
                                     label="Importe de Pago *"
-                                    required="required"
                                 >
                                 </MoneyField> 
                             </v-col>
@@ -185,7 +168,7 @@
 
                         <!-- INICIO CHEQUE -->
                         <v-row v-show="(tipo_de_cobro_id == 3 || tipo_de_cobro_id == 4)">
-                
+                            
                             <v-col cols="12" sm="6" md="4">
                                 <v-switch
                                     v-model="cheque_en_cartera"
@@ -193,7 +176,7 @@
                                     color="success"
                                 ></v-switch>
                             </v-col>
-                            <v-col cols="12" sm="6" md="4" v-if="cheque_en_cartera">
+                            <v-col cols="12" sm="6" md="4" v-if="cheque_en_cartera && cheques_en_cartera.length>0">
                                 <v-autocomplete
                                     v-model="cheque_id"
                                     :items="cheques_en_cartera"
@@ -204,7 +187,7 @@
                                     filled
                                     label="Cheque *"
                                     :rules="chequeRules"
-                                ></v-autocomplete>
+                                ></v-autocomplete>      
                             </v-col>
                         </v-row>
                         <v-row v-show="(tipo_de_cobro_id == 3 || tipo_de_cobro_id == 4) && !cheque_en_cartera">
@@ -231,7 +214,7 @@
                                     <v-text-field
                                         :disabled="deshabilitarEdicionCamposABMPagos"
                                         v-model="pago.cheque.fecha_inicio_de_cobro_f"
-                                        label="Fecha de Inicio de Cobro *"
+                                        label="Fecha de Inicio de Pago *"
                                         type="date"
                                         :rules="chequeRules"
                                     ></v-text-field>  
@@ -246,11 +229,20 @@
                                         readonly
                                     ></v-text-field>  
                                 </v-col>
+                                
                                 <v-col cols="12" sm="6" md="4">
+                                    <v-switch
+                                        v-model="cheque_pagado"
+                                        label="Este Cheque ya se pago?"
+                                        color="success"
+                                    ></v-switch>
+                                </v-col>
+
+                                <v-col cols="12" sm="6" md="4" v-show="cheque_pagado">
                                     <v-text-field
                                         :disabled="deshabilitarEdicionCamposABMPagos"
                                         v-model="pago.cheque.fecha_de_cobro_f"
-                                        label="Fecha de Cobro"
+                                        label="Fecha de Pago"
                                         type="date"
                                         clearable
                                     ></v-text-field>  
@@ -262,7 +254,7 @@
                                         :disabled="deshabilitarEdicionCamposABMPagos"
                                         item-title="causa_de_baja_de_cheque"
                                         item-value="id"
-                                        label="Causa de No Cobro"
+                                        label="Causa de No Pago"
                                         return-object
                                         clearable 
                                     ></v-select>     
@@ -350,9 +342,18 @@
   import router from "@/router";
   import { isProxy, toRaw } from 'vue';
   import MoneyField from '../components/MoneyField.vue';
+  import { cambiarOrden, crearOrdenActual } from '@/utils/sortUtils';
 
 
   const props = defineProps({
+    controlarMontoDeImporte: {
+          type: Boolean,
+          default: true
+    },
+    importe_de_compra: {
+          type: Number,
+          default: 0
+      },
     esCompraCombinada: {
           type: Boolean,
           default: false
@@ -383,6 +384,7 @@
   let txtNotificarCambioTipoDeCobro = ref(null)
   let confirmado = ref(false)
   const cheque_en_cartera = ref(false)
+  const cheque_pagado = ref(false)
   const cheques_en_cartera = ref(null)
   const cheque_id = ref(null)
   const currencyOptions_general = ref({
@@ -407,7 +409,11 @@
   let listaPagos = ref(body['data']);
           
   //Traigo cuentas
-  const body_cuentas = await axios.get(ENDPOINT_PATH_API.value + "cuenta", {headers: headersAxios.value[0]})
+  let jsonCuentas = JSON.stringify({ 
+      firma_id: firma_id.value,
+      compra_encabezado_id: compra_encabezado_id.value
+  });
+  const body_cuentas = await axios.post(ENDPOINT_PATH_API.value + "cuentas-por-firma", jsonCuentas, {headers: headersAxios.value[0]})
   let cuentas = body_cuentas['data']
 
   //Traigo las facturas
@@ -423,6 +429,9 @@
   const body_causas_de_bajas_de_cheques = await axios.get(ENDPOINT_PATH_API.value + "causa-de-baja-de-cheque", {headers: headersAxios.value[0]})
   let causas_de_bajas_de_cheques = body_causas_de_bajas_de_cheques['data']
 
+  //Traigo los cheques en cartera
+  let body_chequesencartera = await axios.get(ENDPOINT_PATH_API.value + "cheques-en-cartera", {headers: headersAxios.value[0]})
+  cheques_en_cartera.value = body_chequesencartera['data']
 
   // ----- Inicio: Validación y envio del Formulario Encabezado
 
@@ -436,7 +445,16 @@
     v => !!v || 'Es requerido'
   ];
   const importe_de_pagoRules = [
-    v => !!v || 'Es requerido'
+    value => {
+        if (!value) {
+            return 'Es requerido'
+        }
+        else {
+            if (value > (props.importe_de_compra*1.05) && props.controlarMontoDeImporte) {
+                return 'El importe del pago esta por encima del 5% del importe de la compra '
+            }
+        }
+    }
   ];
   const tipo_de_cobroRules = [
     v => !!v || 'Es requerido'
@@ -454,14 +472,16 @@
   //Valido el Formulario
   async function validate () {
     const formValidado = await formPagos.value.validate()
-    if (validPago.value) {
+      if (validPago.value && ((pago.value.importe_de_pago < (props.importe_de_compra*1.05) && props.controlarMontoDeImporte) || !props.controlarMontoDeImporte)) {
         enviarFormPago()
-    }    
-    else {
-        console.log(formValidado.valid)
+        }    
+        else {
+            console.log(formValidado.valid)
+        }
     }
-  }
 
+
+  
   //Envio el Formulario
   async function enviarFormPago() {
 
@@ -478,7 +498,7 @@
         causa_de_baja_de_cheque_id = causa_de_baja_de_cheque_id.id
         }
     }
-
+    
     //construjo el json a enviar a laravel
     json = JSON.stringify({ 
       compra_encabezado_id: compra_encabezado_id.value,
@@ -495,7 +515,7 @@
         //fecha_de_emision: pago.value.cheque.fecha_de_emision_f,
         fecha_inicio_de_cobro: pago.value.cheque.fecha_inicio_de_cobro_f,
         fecha_de_vencimiento: pago.value.cheque.fecha_de_vencimiento_f,
-        fecha_de_cobro: pago.value.cheque.fecha_de_cobro_f,
+        fecha_de_cobro: cheque_pagado.value ? pago.value.cheque.fecha_de_cobro_f : null,
         causa_de_baja_de_cheque_id: causa_de_baja_de_cheque_id
         },
     });
@@ -506,11 +526,13 @@
       body_abm = await axios.post(ENDPOINT_PATH_API.value + "pago-de-compra", json, {headers: headersAxios.value[0]})
     }
     if (accionABM.value == 'M') {
-      body_abm = await axios.put(ENDPOINT_PATH_API.value + "pago-de-compra/"+pago_id.value, json, {headers: headersAxios.value[0]})
+      //body_abm = await axios.put(ENDPOINT_PATH_API.value + "pago-de-compra/"+pago_id.value, json, {headers: headersAxios.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "pago-de-compra-update/"+pago_id.value, json, {headers: headersAxios.value[0]})
     }  
     
     if (accionABM.value == 'B') {
-      body_abm = await axios.delete(ENDPOINT_PATH_API.value + "pago-de-compra/"+pago_id.value, json, {headers: headersAxios.value[0]})
+      //body_abm = await axios.delete(ENDPOINT_PATH_API.value + "pago-de-compra/"+pago_id.value, json, {headers: headersAxios.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "pago-de-compra-delete/"+pago_id.value, json, {headers: headersAxios.value[0]})
     }      
     mensaje.value = body_abm['data'].mensaje
 
@@ -568,9 +590,10 @@
                     }
                 },
         }
-        
+        cheque_pagado.value = false
         tipo_de_cobro_id_original.value = null
         botonABM.value = 'Insertar';
+        cheque_en_cartera.value = false
         deshabilitarEdicionCamposABMPagos.value = false    
         
     }
@@ -584,6 +607,7 @@
             facturas.value.push(valor.factura_de_compra_id)
         });    
         tipo_de_cobro_id_original.value = pago.value.tipo_de_cobro.id        
+        cheque_pagado.value = pago.value.cheque?.fecha_de_cobro ? true : false
     }
     if (accion == 'B') {
         botonABM.value = 'Eliminar';     
@@ -627,6 +651,14 @@
 
 
         }  
+        
+        if (!pago.value.cheque.cuenta_emisora_id) {
+            cheque_en_cartera.value = true
+            cheque_id.value = pago.value.cheque.id
+        }
+        else {
+            cheque_en_cartera.value = false
+        }
     }
   }
 
@@ -659,12 +691,8 @@
     watch(
         () => cheque_en_cartera.value,
         async (newValue, oldValue) => {
-          if (newValue) {
-            let body_chequesencartera = await axios.get(ENDPOINT_PATH_API.value + "cheques-en-cartera", {headers: headersAxios.value[0]})
-            cheques_en_cartera.value = body_chequesencartera['data']
-          }
-          else {
-            cheque_id.value = false
+          if (!newValue) {
+            cheque_id.value = null
           }
         }
     ) 
@@ -718,6 +746,16 @@
         return Number(numero).toLocaleString("es-AR", 'ARS')
 
     }
+
+    // Crear una instancia de `ordenActual` utilizando la función de utilidades
+    const ordenActual = crearOrdenActual();
+
+    // Usar la función importada para cambiar el orden de `cobros`
+    const cambiarOrdenPagos = (propiedad) => {
+    cambiarOrden(listaPagos.value, ordenActual.value, propiedad);
+    };
+
+
 </script>
 
 
@@ -726,5 +764,8 @@
     margin-bottom: -50px;
 }
 
+.pointer {
+  cursor: pointer;
+}
 
 </style>

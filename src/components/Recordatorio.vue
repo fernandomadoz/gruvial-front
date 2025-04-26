@@ -30,7 +30,7 @@
                 ></v-text-field>
               </v-col>
                     
-              <v-col cols="12" sm="6" md="8">
+              <v-col cols="12" sm="6" md="4">
                   <v-text-field
                   v-model="detalle"
                   :rules="requeridoRules"
@@ -55,17 +55,17 @@
                 ></v-autocomplete> 
               </v-col>
 
-              <v-col cols="12" sm="6" md="4">
-                <v-switch v-if="props.accion != 'A'"                 
+              <v-col cols="12" sm="6" md="4" v-if="props.accion != 'A'">
+                <v-switch                 
                   v-model="completado"
                   label="Completado?"
                   color="success"
                   :disabled="deshabilitarEdicionCamposABMEncabezado"
                 ></v-switch>
-              </v-col>             
+              </v-col>              
 
-              <v-col cols="12" sm="6" md="4">
-                <v-switch v-if="completado && !recordatorio_hijo"                 
+              <v-col cols="12" sm="6" md="4" v-if="completado && !recordatorio_hijo">
+                <v-switch 
                   v-model="renovar"
                   label="Renovar?"
                   color="success"
@@ -90,15 +90,34 @@
                   item-title="detalle_select"
                   item-value="id"
                   dense
+                  :rules="requeridoRules"
                   filled
-                  label="Recordatorio para"
+                  label="Recordatorio para *"
                   :disabled="deshabilitarEdicionCamposABMEncabezado"
                 ></v-autocomplete> 
+              </v-col>  
+
+              <v-col cols="12" sm="6" md="4" v-show="props.accion == 'A' || renovar">
+                <v-switch                  
+                  v-model="agendar"
+                  label="Agendar en calendario?"
+                  color="success"
+                  :disabled="deshabilitarEdicionCamposABMEncabezado"
+                ></v-switch>
               </v-col>
+              
+              <v-col cols="12" sm="6" md="4" v-show="(agendar && props.accion == 'A') || (agendar && renovar)">
+                <v-switch                  
+                  v-model="enviar_recordatorio_via_mail"
+                  :label="labelEnviarRecordatorio()"
+                  color="success"
+                  :disabled="deshabilitarEdicionCamposABMEncabezado"
+                ></v-switch>
+              </v-col>
+              
 
               <v-col cols="12" sm="12" md="12">
                 <quill-editor theme="snow" toolbar="full" v-model:content="notas" content="String" contentType="html"></quill-editor>
-                mitexto {{ notas }}
               </v-col>
             </v-row>
 
@@ -109,7 +128,7 @@
             <v-alert type="success" v-show="mensajeStore != null">{{ mensajeStore }}</v-alert>
 
             <v-btn
-              class="ma-2"
+              class="mt-15"
               color="primary"
               @click="validate"
               :disabled="loading"
@@ -186,7 +205,10 @@ const tipo_de_recordatorio_id = ref(null)
 const fecha_proximo_recordatorio = ref(null)
 const recordatorio_para_user_id = ref(null)
 const renovar = ref(null)
+const agendar = ref(true)
+const enviar_recordatorio_via_mail = ref(false)
 const notas = ref(null)
+
 
 
 //Traigo Tipos de Recordatorios
@@ -222,6 +244,8 @@ else {
   fecha_proximo_recordatorio.value = recordatorio.data.fecha_proximo_recordatorio
   recordatorio_para_user_id.value = recordatorio.data.recordatorio_para_user_id
   notas.value = recordatorio.data.notas
+  agendar.value = recordatorio.data.agendar
+  enviar_recordatorio_via_mail.value = recordatorio.data.enviar_recordatorio_via_mail
   
 
   if (props.accion == 'M') {
@@ -248,7 +272,7 @@ const requeridoRules =  [
   //Valido el Formulario
   async function validate () {
     await formEncabezado.value.validate()
-    if (valid.value) {
+    if (valid.value || props.accion == 'B') {
       enviarFormEncabazado()
     }    
   }
@@ -268,7 +292,9 @@ async function enviarFormEncabazado() {
       tipo_de_recordatorio_id: tipo_de_recordatorio_id.value,
       fecha_proximo_recordatorio: fecha_proximo_recordatorio.value,
       recordatorio_para_user_id: recordatorio_para_user_id.value,
-      notas: notas.value
+      notas: notas.value,
+      agendar: agendar.value,
+      enviar_recordatorio_via_mail: enviar_recordatorio_via_mail.value,
   });
 
   let cod_mensaje = null;
@@ -280,11 +306,13 @@ async function enviarFormEncabazado() {
   }
   else {      
     if (props.accion == 'M') {
-      const body_update = await axios.put(ENDPOINT_PATH_API.value + "recordatorio/"+recordatorio_id.value, json, {headers: headersAxios.value[0]})
+      //const body_update = await axios.put(ENDPOINT_PATH_API.value + "recordatorio/"+recordatorio_id.value, json, {headers: headersAxios.value[0]})
+      const body_update = await axios.post(ENDPOINT_PATH_API.value + "recordatorio-update/"+recordatorio_id.value, json, {headers: headersAxios.value[0]})
       cod_mensaje = 'MM'
     }      
     if (props.accion == 'B') {
-      const body_update = await axios.delete(ENDPOINT_PATH_API.value + "recordatorio/"+recordatorio_id.value, json, {headers: headersAxios.value[0]})
+      //const body_update = await axios.delete(ENDPOINT_PATH_API.value + "recordatorio/"+recordatorio_id.value, json, {headers: headersAxios.value[0]})
+      const body_update = await axios.post(ENDPOINT_PATH_API.value + "recordatorio-delete/"+recordatorio_id.value, json, {headers: headersAxios.value[0]})
       cod_mensaje = 'MB'
     }
   }    
@@ -304,6 +332,13 @@ function tf_a_sino(tf) {
   console.log(tf)
   return tf ? 'SI' : 'NO'
 }
+
+function labelEnviarRecordatorio() {
+  let aquien = firma_id.value == 3 ? 'Nacho' : 'Paula' 
+  let label = 'Enviar recordatorio via mail a '+aquien+'?'
+  return label
+}
+
 
 </script>
 

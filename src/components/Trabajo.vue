@@ -74,6 +74,9 @@
               </v-row>
 
               <v-row>
+                
+                
+
                 <v-col cols="12" sm="6" md="4">
                   <v-switch
                     v-model="nuevoCliente"
@@ -130,8 +133,8 @@
                     counter="11"
                     type="number"
                     clearable
-                    :rules="cuit_o_cuilRules"
                     label="CUIT o CUIL"
+                    :rules="cuit_o_cuilRules"
                   ></v-text-field>            
                 </v-col>
                 
@@ -209,7 +212,19 @@
                   <v-textarea
                     label="Observaciones"
                     v-model="observaciones"
+                    counter="250"
+                    maxlength="250"
                   ></v-textarea>
+                </v-col>
+
+                <v-col cols="12" sm="12" md="12">
+                  <v-switch
+                    v-model="es_mensual"
+                    label="Es un trabajo de facturación mensual (aparecera en notificaciones de trabajos mensuales)"
+                    color="success"
+                    false-value="NO"
+                    true-value="SI"
+                  ></v-switch>
                 </v-col>
 
               </v-row>
@@ -228,6 +243,41 @@
                 Guardar  
               </v-btn>
 
+              
+              <v-dialog width="500" v-if="compra_encabezado_id != -1">
+                  <template v-slot:activator="{ props }">
+                      <v-btn color="red" v-bind="props" class="ma-2" v-show="user_id == 1 || user_id == 4">
+                        Eliminar
+                        <v-icon end icon="mdi-cancel"></v-icon>
+                      </v-btn>
+                  </template>
+
+                  <template v-slot:default="{ isActive }">
+                    <v-card title="Eliminar">
+                      <v-card-text>
+                        <p>
+                          Esta seguro que quieres Eliminar este Trabajo?<br><br>
+                          <i class="text-gery">Eliminaras también las compras, cobros, facturas, notas, documentos y servicios, remitos cargadas dentro de esta compra</i>
+                        </p>                        
+                      </v-card-text>
+                      <v-card-actions>
+                        <v-spacer></v-spacer>
+
+                        <v-btn
+                          @click="validate('borrar-y-volver-al-listado')"
+                          color="red"
+                        >Si, Eliminar</v-btn>
+                        
+                        <v-btn
+                          @click="isActive.value = false"
+                        >Cancelar</v-btn>
+                      </v-card-actions>
+                    </v-card>
+                  </template>
+              </v-dialog>
+
+
+
               <v-progress-circular
                 indeterminate
                 color="amber"
@@ -239,14 +289,34 @@
                 <v-col cols="12" sm="6" md="4">
                   <v-switch
                     v-model="trabajo_cancelado"
-                    label="Cancelar trabajo"
+                    label="Finalizar o Cancelar trabajo"
                     color="error"
                   ></v-switch>
+                  
+                    <v-text-field
+                        v-show="trabajo_cancelado"
+                        v-model="fecha_de_cancelacion"
+                        label="Fecha de Finalización o Cancelación"
+                        type="date"
+                    ></v-text-field>
+
+                  <v-select
+                    v-show="trabajo_cancelado"
+                    v-model="motivo_de_cancelacion_id"
+                    :items="motivos_de_cancelacion"
+                    item-title="motivo_de_cancelacion"
+                    item-value="id"
+                    label="Motivo de Finalización o Cancelación?"
+                    class="mt-4"
+                  ></v-select>    
+                    
                 </v-col>
                 <v-col cols="12" sm="6" md="8" v-show="trabajo_cancelado">
                   <v-textarea
-                    label="observaciones de cancelación"
+                    label="observaciones de Finalización o Cancelación"
                     v-model="observaciones_de_cancelacion"
+                    counter="250"
+                    maxlength="250"
                   ></v-textarea>
                 </v-col>
               </v-row>
@@ -367,6 +437,7 @@
   const nuevoCliente = ref(false)
   const loading = ref(false)
   const hasError = ref(false)
+  const es_mensual = ref('NO')
 
   //Traigo firmas
   const body_firmas = await axios.get(ENDPOINT_PATH_API.value + "firma-por-usuario", {headers: headersAxios.value[0]})
@@ -377,6 +448,13 @@
   //Traigo Origenes
   let body_origenes = await axios.get(ENDPOINT_PATH_API.value + "origen-de-leed", {headers: headersAxios.value[0]})
   let origenes = ref(body_origenes['data'])
+  
+  //Traigo Motivos de cancelacion
+  let body_motivos_de_cancelacion = await axios.get(ENDPOINT_PATH_API.value + "motivo-de-cancelacion", {headers: headersAxios.value[0]})
+  let motivos_de_cancelacion = ref(body_motivos_de_cancelacion['data'])
+  
+  
+
 
   //Traigo clientes
   let body_clientes = await axios.get(ENDPOINT_PATH_API.value + "cliente", {headers: headersAxios.value[0]})
@@ -402,8 +480,8 @@
   let fecha_inicio = ref(null)
   let observaciones = ref(null)
   let fecha_de_cancelacion = ref(null)
-  let fecha_de_cancelacion_f = ref(null)
   let observaciones_de_cancelacion = ref(null)
+  let motivo_de_cancelacion_id = ref(null)
   const formEncabezado = ref(null) 
   let es_consumidor_final = ref(false)
   let nombre_o_razon_social = ref(null)
@@ -421,6 +499,7 @@
   let importeFacturas = ref(null)
   let importeCobros = ref(null)
   let trabajo_cancelado = ref(false)
+  const accionPosterior = ref(null)
 
   if (trabajo_encabezado_id.value == -1) {
     // Seteo valores de variables para un alta de trabajos_encabezados
@@ -438,8 +517,9 @@
     firma_id_trabajo.value = trabajo_encabezado.data.firma.id
     cliente_id.value = trabajo_encabezado.data.cliente.id
     fecha_inicio.value = trabajo_encabezado.data.fecha_inicio_f
-    fecha_de_cancelacion.value = trabajo_encabezado.data.fecha_de_cancelacion
+    fecha_de_cancelacion.value = trabajo_encabezado.data.fecha_de_cancelacion_f
     observaciones_de_cancelacion.value = trabajo_encabezado.data.observaciones_de_cancelacion
+    motivo_de_cancelacion_id.value = trabajo_encabezado.data.motivo_de_cancelacion_id
     observaciones.value = trabajo_encabezado.data.observaciones
     estado.value = trabajo_encabezado.data.estado
     pagado.value = trabajo_encabezado.data.pagado
@@ -447,6 +527,7 @@
     importeFacturas.value = trabajo_encabezado.data.importeFacturas
     importeCobros.value = trabajo_encabezado.data.importeCobros
     origen_de_leed_id.value = trabajo_encabezado.data.origen_de_leed_id
+    es_mensual.value = trabajo_encabezado.data.es_mensual
 
     trabajo_cancelado.value = fecha_de_cancelacion.value ? true : false;
 
@@ -462,19 +543,10 @@
   const firmaRules = [
     v => !!v || 'Firma es requerido'
   ];
-  const clienteRules = [
-    v => !!v || 'Cliente es requerido'
-  ];
   const fecha_inicioRules = [
     v => !!v || 'Fecha de Inicio es requerido'
   ];
-  const nombre_o_razon_socialRules =  [
-    v => !!v || 'Nombre o Razon Social es requerido',
-    v => (v && v.length <= 80) || 'Maximo 80 caracteres',
-  ];
-  const tipo_de_clienteRules = [
-    v => !!v || 'Tipo de Cliente es requerido'
-  ];
+  
   const telefonosRules =  [
     v => (v && v.length <= 80) || 'Maximo 80 caracteres',
   ];
@@ -483,15 +555,50 @@
   ];
 
   
+  let clienteRules = [
+      value => {
+        if (!value && !nuevoCliente.value) {
+            console.log('Es requerido')
+            return 'El Cliente es requerido'
+        }
+        return true
+      }
+  ]
+  
+
+  let nombre_o_razon_socialRules = [
+      value => {
+          if (nuevoCliente.value) {
+            if (!value) {
+                return 'Requerido'
+            }           
+          }
+          return true
+      }
+  ]
+
+  let tipo_de_clienteRules = [
+      value => {
+          if (nuevoCliente.value) {
+            if (!value) {
+                return 'Requerido'
+            }           
+          }
+          return true
+      }
+  ]
+
   let cuit_o_cuilRules = [
       value => {
           if (nuevoCliente.value && !es_consumidor_final.value) {
             if (!value) {
-                return 'CUIT es requerido'
+                //return 'CUIT es requerido'
             }
-            if (value && (value.length != 11)) {
-                return 'CUIT debe ser sin guiones y no mayor a 11 caracteres'
-            }
+            else {
+              if (value && (value.length != 11)) {
+                  return 'CUIT debe ser sin guiones y no mayor a 11 caracteres'
+              }
+            }            
           }
           return true
       }
@@ -504,12 +611,20 @@
 
 
   //Valido el Formulario
-  async function validate () {
-    await formEncabezado.value.validate()
+  async function validate(accionValidate = null) {
+    let resul = await formEncabezado.value.validate()
+    accionPosterior.value = accionValidate
+
+    // Si el formulario es valido guardo los datos
     if (valid.value) {
       enviarFormEncabazado()
-    }    
-  }
+    }
+    else {
+      console.log(valid.value)
+      console.log(resul)
+    }
+
+  };
 
 
   //Envio el Formulario
@@ -543,6 +658,9 @@
       observaciones: observaciones.value,
       trabajo_cancelado: trabajo_cancelado.value,
       observaciones_de_cancelacion: observaciones_de_cancelacion.value,
+      fecha_de_cancelacion: fecha_de_cancelacion.value,
+      motivo_de_cancelacion_id: motivo_de_cancelacion_id.value,
+      es_mensual: es_mensual.value,
     });
 
     let resultadoGuardar = null;
@@ -559,10 +677,19 @@
       }
     }
     else {
-      const body_update = await axios.put(ENDPOINT_PATH_API.value + "trabajo-encabezado/"+trabajo_encabezado_id.value, json, {headers: headersAxios.value[0]})
-      let trabajo_encabezado_update = body_update['data']
-      cliente_id.value = body_update['data'].trabajo_encabezado.cliente.id
-      setearMensajeStore(body_update['data'].mensaje)
+      if (accionPosterior.value == 'borrar-y-volver-al-listado') {
+        //const body_update = await axios.delete(ENDPOINT_PATH_API.value + "compra-encabezado/"+props.compra_encabezado_id, json, {headers: headersAxios.value[0]})
+        const body_update = await axios.post(ENDPOINT_PATH_API.value + "trabajo-encabezado-delete/"+trabajo_encabezado_id.value, json, {headers: headersAxios.value[0]})
+        let trabajo_encabezado_update = body_update['data']
+        setearMensajeStore(body_update['data'].mensaje)
+      }
+      else {
+        //const body_update = await axios.put(ENDPOINT_PATH_API.value + "trabajo-encabezado/"+trabajo_encabezado_id.value, json, {headers: headersAxios.value[0]})
+        const body_update = await axios.post(ENDPOINT_PATH_API.value + "trabajo-encabezado-update/"+trabajo_encabezado_id.value, json, {headers: headersAxios.value[0]})
+        let trabajo_encabezado_update = body_update['data']
+        cliente_id.value = body_update['data'].trabajo_encabezado.cliente.id
+        setearMensajeStore(body_update['data'].mensaje)
+      }
     }    
 
     if (!hasError.value) {
@@ -583,6 +710,11 @@
   function getTime() {
     setTimeout(() => {
       setearMensajeStore(null)
+      
+      if (accionPosterior.value == 'borrar-y-volver-al-listado') {
+        router.push("/trabajos-list");        
+      }
+
     }, 2 * 1000);
   }
 
@@ -596,9 +728,6 @@
         }
     )   
 
-let text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'
-
-
     function formatoNumero(numero) {
         let decimal = {useGrouping: false }
         let moneda = { style: "currency", minimumFractionDigits: 2, maximumFractionDigits: 2 }
@@ -606,6 +735,8 @@ let text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eius
         return Number(numero).toLocaleString("es-AR", 'ARS')
 
     }
+
+      
 </script>
 
 
