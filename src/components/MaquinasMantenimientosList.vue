@@ -23,11 +23,14 @@
                     <th class="text-left">Accion</th>
                     <th class="text-left">id</th>
                     <th class="text-left">Tipo Mantenimiento</th>
+                    <th class="text-left">Equipo</th>
+                    <th class="text-left">Prioridad</th>
+                    <th class="text-left">Estado de la Tarea</th>
                     <th class="text-left">Responsable</th>
-                    <th class="text-left">Finalizado</th>
+                    <th class="text-left">Finalizada</th>
                     <th class="text-left">Fecha de Parada</th>
                     <th class="text-left">Fecha de Puesta en Marcha</th>
-                    <th class="text-left">Trabajo realizado</th>
+                    <th class="text-left">Nombre de Tarea</th>
                     <th class="text-left">Archivos</th>
                 </tr>
                 </thead>
@@ -53,12 +56,15 @@
                         ></v-btn>
                     </td>
                     <td>{{ item.id }}</td>
-                    <td>{{ item.tipo_de_mantenimiento.tipo_de_mantenimiento }} </td>
+                    <td>{{ item.tipo_de_mantenimiento.tipo_de_mantenimiento }} {{ item.preventivo_de_maquina_id ? ' | '+item.preventivo_de_maquina?.detalle_select : '' }}</td>
+                    <td>{{ item.equipo?.equipo ?? "" }}</td>
+                    <td>{{ item.prioridad.prioridad }}</td>
+                    <td>{{ item.estado_de_tarea.estado_de_tarea }}</td>
                     <td>{{ item.persona.nombre }} {{ item.persona.apellido }} </td>
-                    <td><v-icon :icon="item.finalizado == '1' ? 'mdi mdi-check-circle' : 'mdi mdi-close-circle'" :color="item.finalizado == '1' ? 'success' : 'error'"></v-icon> </td>
+                    <td><v-icon :icon="item.estado_de_tarea_id == '3' ? 'mdi mdi-check-circle' : 'mdi mdi-close-circle'" :color="item.estado_de_tarea_id == '3' ? 'success' : 'error'"></v-icon> </td>
                     <td>{{ item.fecha_de_parada }}</td>
                     <td>{{ item.fecha_de_puesta_en_marcha }}</td>
-                    <td>{{ item.trabajo_realizado }}</td>
+                    <td>{{ item.nombre_de_tarea }}</td>
                     <td>
                         <span v-for="n in 10" :key="n" class="m-1">
                             <a :href="item['archivo_'+n]" target="_blank" v-if="item['archivo_'+n]">
@@ -113,6 +119,18 @@
                             </v-col>
                             <v-col cols="12" sm="6" md="6">
                                 <v-select
+                                    v-model="mantenimiento.equipo.id"
+                                    :items="equipos"
+                                    :disabled="deshabilitarEdicionCamposABMMantenimientos"
+                                    item-title="equipo"
+                                    item-value="id"
+                                    required="required"
+                                    label="Equipo *"
+                                    :rules="equipoRules"
+                                    ></v-select>     
+                            </v-col>
+                            <v-col cols="12" sm="6" md="6">
+                                <v-select
                                     v-model="mantenimiento.persona.id"
                                     :items="personas"
                                     :disabled="deshabilitarEdicionCamposABMMantenimientos"
@@ -123,18 +141,58 @@
                                     :rules="requeridoRules"
                                     ></v-select>     
                             </v-col>
+                            <v-col cols="12" sm="12" md="12">
+                                <v-select
+                                    v-model="mantenimiento.preventivo_de_maquina.id"
+                                    v-show="mantenimiento.tipo_de_mantenimiento.id == 1"
+                                    :items="preventivos_de_maquina"
+                                    :disabled="deshabilitarEdicionCamposABMMantenimientos"
+                                    item-title="detalle_select"
+                                    item-value="id"
+                                    required="required"
+                                    label="Preventivo *"
+                                    :rules="preventivos_de_maquinaRules"
+                                    ></v-select>     
+                            </v-col>
+                                        
+                            <v-col cols="12" sm="6" md="6">
+                                <v-select
+                                    v-model="mantenimiento.prioridad.id"
+                                    :items="prioridades"
+                                    :disabled="deshabilitarEdicionCamposABMMantenimientos"
+                                    item-title="prioridad"
+                                    item-value="id"
+                                    required="required"
+                                    label="Prioridad *"
+                                    :rules="requeridoRules"
+                                    ></v-select>     
+                            </v-col>
+
+                                        
+                            <v-col cols="12" sm="6" md="6">
+                                <v-select
+                                    v-model="mantenimiento.estado_de_tarea.id"
+                                    :items="estados_de_tarea"
+                                    :disabled="deshabilitarEdicionCamposABMMantenimientos"
+                                    item-title="estado_de_tarea"
+                                    item-value="id"
+                                    required="required"
+                                    label="Estado de tarea *"
+                                    :rules="requeridoRules"
+                                    ></v-select>     
+                            </v-col>
                             <v-col cols="12" sm="6" md="6">
                                 <v-text-field
                                     :disabled="deshabilitarEdicionCamposABMMantenimientos"
-                                    v-model="mantenimiento.trabajo_realizado"
+                                    v-model="mantenimiento.nombre_de_tarea"
                                     counter="150"
                                     required="required"
                                     maxlength="150"
-                                    label="Trabajo Realizado *"
-                                    :rules="trabajo_realizadoRules"
+                                    label="Nombre de Tarea *"
+                                    :rules="nombre_de_tareaRules"
                                     ></v-text-field>
                             </v-col>
-                            <v-col cols="12" sm="6" md="6">
+                            <v-col cols="12" sm="6" md="6" v-if="props.corresponde_registro_de_horas">
                                 <v-text-field
                                     :disabled="deshabilitarEdicionCamposABMMantenimientos"
                                     v-model="mantenimiento.horas"
@@ -146,7 +204,7 @@
                                     required="required"
                                 ></v-text-field> 
                             </v-col>
-                            <v-col cols="12" sm="6" md="6">
+                            <v-col cols="12" sm="6" md="6" v-if="props.corresponde_registro_de_kms">
                                 <v-text-field
                                     :disabled="deshabilitarEdicionCamposABMMantenimientos"
                                     v-model="mantenimiento.kms"
@@ -163,8 +221,7 @@
                                 <v-text-field
                                     :disabled="deshabilitarEdicionCamposABMMantenimientos"
                                     v-model="mantenimiento.fecha_de_parada_f"
-                                    :rules="fecha_de_paradaRules"
-                                    label="Fecha de Parada *"
+                                    label="Fecha de Parada"
                                     type="date"
                                 ></v-text-field>  
                             </v-col>
@@ -179,15 +236,6 @@
                             </v-col>
                             
 
-                            <v-col cols="12" sm="6" md="6">
-                                <v-switch
-                                    v-model="mantenimiento.finalizado"
-                                    :true-value="1"
-                                    :false-value="0"
-                                    label="Mantenimiento finalizado"
-                                    color="success"
-                                ></v-switch>
-                            </v-col>
 
                             <!-- Arvhivo mostrar-->
                             <v-col cols="12" sm="6" md="4" v-if="mantenimiento.archivo">                                
@@ -317,6 +365,14 @@
           type: Number,
           default: null
       },
+    corresponde_registro_de_horas: {
+          type: Boolean,
+          default: false
+      },
+    corresponde_registro_de_kms: {
+          type: Boolean,
+          default: false
+      },
   })
 
   let json = JSON.stringify({ 
@@ -327,9 +383,27 @@
   let body = await axios.post(ENDPOINT_PATH_API.value + "maquina-mantenimiento-listar", json, {headers: headersAxios.value[0]});
   let listaMantenimientos = ref(body['data']);
           
+
+  //Traigo los Preventivos del Maquina
+  let body_preventivos_de_maquina = await axios.post(ENDPOINT_PATH_API.value + "maquina-preventivo-listar", json, {headers: headersAxios.value[0]});
+  let preventivos_de_maquina = ref(body_preventivos_de_maquina['data']);
+       
+
   //Traigo tipos de mantenimientos
   const body_tipos_de_mantenimientos = await axios.get(ENDPOINT_PATH_API.value + "tipo-de-mantenimiento", {headers: headersAxios.value[0]})
   let tipos_de_mantenimientos = body_tipos_de_mantenimientos['data']
+
+  //Traigo Equipos
+  const body_equipos = await axios.get(ENDPOINT_PATH_API.value + "equipo", {headers: headersAxios.value[0]})
+  let equipos = body_equipos['data']
+  
+  //Traigo prioridades
+  const body_prioridades = await axios.get(ENDPOINT_PATH_API.value + "prioridad", {headers: headersAxios.value[0]})
+  let prioridades = body_prioridades['data']
+
+  //Traigo Estados de Tarea
+  const body_estados_de_tarea = await axios.get(ENDPOINT_PATH_API.value + "estado-de-tarea", {headers: headersAxios.value[0]})
+  let estados_de_tarea = ref(body_estados_de_tarea['data'])
 
   //Traigo personas
   const body_personas = await axios.get(ENDPOINT_PATH_API.value + "persona", {headers: headersAxios.value[0]})
@@ -353,9 +427,25 @@
   const tipo_de_mantenimientoRules = [
     v => !!v || 'Es requerido'
   ];
-  const trabajo_realizadoRules = [
+  
+  const equipoRules = [
     v => !!v || 'Es requerido'
   ];
+
+  const nombre_de_tareaRules = [
+    v => !!v || 'Es requerido'
+  ];
+
+  const preventivos_de_maquinaRules = [
+    v => {
+        if (mantenimiento.value.tipo_de_mantenimiento.id == 1) {
+            return !!v || 'Es requerido'
+        }
+        return true
+    }
+];
+
+
 
   const maxFiles = 10 // Número máximo de archivos permitidos
   const maxTotalSize = 20 * 1024 * 1024
@@ -398,11 +488,14 @@
     formData.append("mantenimiento_id", mantenimiento_id.value)
     formData.append("maquina_id", props.maquina_id)
     formData.append("tipo_de_mantenimiento_id", mantenimiento.value.tipo_de_mantenimiento.id)
+    formData.append("equipo_id", mantenimiento.value.equipo?.id ?? null)
+    formData.append("preventivo_de_maquina_id", mantenimiento.value.preventivo_de_maquina?.id ?? null)
+    formData.append("prioridad_id", mantenimiento.value.prioridad.id)
+    formData.append("estado_de_tarea_id", mantenimiento.value.estado_de_tarea.id)
     formData.append("persona_id", mantenimiento.value.persona.id)
-    formData.append("finalizado", mantenimiento.value.finalizado)
     formData.append("fecha_de_parada", mantenimiento.value.fecha_de_parada_f)
     formData.append("fecha_de_puesta_en_marcha", mantenimiento.value.fecha_de_puesta_en_marcha_f)
-    formData.append("trabajo_realizado", mantenimiento.value.trabajo_realizado)
+    formData.append("nombre_de_tarea", mantenimiento.value.nombre_de_tarea)
     formData.append("notas", mantenimiento.value.notas)
     formData.append("horas", mantenimiento.value.horas)
     formData.append("kms", mantenimiento.value.kms)
@@ -415,10 +508,12 @@
     json = JSON.stringify({ 
       maquina_id: props.maquina_id,
       tipo_de_mantenimiento_id: mantenimiento.value.tipo_de_mantenimiento.id,
+      equipo_id: mantenimiento.value.equipo.id,
+      preventivo_de_maquina_id: mantenimiento.value.preventivo_de_maquina?.id ?? null,
       nro_de_mantenimiento: mantenimiento.value.nro_de_mantenimiento,
       fecha_de_parada: mantenimiento.value.fecha_de_parada_f,
       fecha_de_puesta_en_marcha: mantenimiento.value.fecha_de_puesta_en_marcha_f,
-      trabajo_realizado: mantenimiento.value.trabajo_realizado,
+      nombre_de_tarea: mantenimiento.value.nombre_de_tarea,
       //archivo_new: archivo_new.value
     });
     
@@ -463,11 +558,22 @@
             tipo_de_mantenimiento: {
                 id: null
             },
+            equipo: {
+                id: null
+            },
+            prioridad: {
+                id: null
+            },
+            estado_de_tarea: {
+                id: null
+            },
             persona: {
                 id: null
             },
-            trabajo_realizado: null,
-            finalizado: null,
+            preventivo_de_maquina: {
+                id: null
+            },
+            nombre_de_tarea: null,
             fecha_de_parada: null,
             fecha_de_puesta_en_marcha: null,
             kms: null,
@@ -483,8 +589,7 @@
     }
     if (accion == 'M') {
         botonABM.value = 'Modificar';
-        mantenimiento.value = item
-        
+        mantenimiento.value = item       
         mantenimiento_id.value = mantenimiento.value.id        
         deshabilitarEdicionCamposABMMantenimientos.value = false       
     }
@@ -493,6 +598,19 @@
             mantenimiento.value = item
             mantenimiento_id.value = mantenimiento.value.id   
             deshabilitarEdicionCamposABMMantenimientos.value = true       
+    }
+
+    if (accion == 'M' || accion == 'B') {
+        if (!mantenimiento.value.preventivo_de_maquina_id) {
+            mantenimiento.value.preventivo_de_maquina = {
+                id: null
+            }
+        }
+        if (!mantenimiento.value.equipo_id) {
+            mantenimiento.value.equipo = {
+                id: null
+            }
+        }
     }
   }
 

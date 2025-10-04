@@ -2,6 +2,11 @@
 
         <v-row no-gutters>
           
+          <!--ESTADO DE RESULTADO-->
+          <v-col cols="12" sm="12" class="p-2" v-if="mostrarRepGerencia">
+            <ReporteEstadoDeResultado/>
+          </v-col>
+
           <!--IVA VENTAS / IVA COMPRAS-->
           <v-col cols="12" sm="6" class="p-2" v-if="mostrarRepGerencia">
             <ReporteIva/>
@@ -32,6 +37,13 @@
             <ReporteCotizacionesPorEstado/>
           </v-col>
 
+          <!--Cotizaciones por Estado-->
+          <v-col cols="12" sm="12" class="p-2">
+            <ReporteComoNosConocieron/>
+          </v-col>
+
+          
+
 
         </v-row>
   
@@ -43,6 +55,8 @@
   import ReporteComprasPorCategoria from '../components/ReporteComprasPorCategoria.vue';
   import ReporteTrabajosPorMaquina from '../components/ReporteTrabajosPorMaquina.vue';
   import ReporteCotizacionesPorEstado from '../components/ReporteCotizacionesPorEstado.vue';
+  import ReporteEstadoDeResultado from '../components/ReporteEstadoDeResultado.vue';
+  import ReporteComoNosConocieron from '../components/ReporteComoNosConocieron.vue';
   
   import { ref } from "vue";
   import { useData } from '../composables/useData';

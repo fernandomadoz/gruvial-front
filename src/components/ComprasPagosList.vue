@@ -180,10 +180,9 @@
                             </v-col>
                         </v-row>
                             
-
                         <!-- INICIO CHEQUE -->
                         <v-row v-show="(tipo_de_cobro_id == 3 || tipo_de_cobro_id == 4)">
-                            
+                         
                             <v-col cols="12" sm="6" md="4">
                                 <v-switch
                                     v-model="cheque_en_cartera"
@@ -191,6 +190,7 @@
                                     color="success"
                                 ></v-switch>
                             </v-col>
+                               
                             <v-col cols="12" sm="6" md="4" v-if="cheque_en_cartera && cheques_en_cartera.length>0">
                                 <v-autocomplete
                                     v-model="cheque_id"
@@ -201,7 +201,7 @@
                                     dense
                                     filled
                                     label="Cheque *"
-                                    :rules="chequeRules"
+                                    :rules="cheque_en_carteraRules"
                                 ></v-autocomplete>      
                             </v-col>
                         </v-row>
@@ -498,7 +498,7 @@
   const concepto_de_sueldo_idRules = [
         value => {
             if (!value && (compra_encabezado.value.plan_de_cuenta_id == 6 || compra_encabezado.value.plan_de_cuenta_id == 7)) {
-                return 'este valor es requerido'
+                return 'este valor es requerido (1)'
             }
         }
   ];
@@ -506,11 +506,21 @@
   const chequeRules = [
         value => {
             if (!value && (tipo_de_cobro_id.value == 3 || tipo_de_cobro_id.value == 4) && !cheque_en_cartera) {
-                return 'este valor es requerido'
+                return 'este valor es requerido (2)'
             }
         }
     ]
 
+
+    const cheque_en_carteraRules = [
+        value => {
+            if (!value  && cheque_en_cartera) {
+                return 'este valor es requerido (3)'
+            }
+        }
+    ]
+
+    
 
   //Valido el Formulario
   async function validate () {
@@ -518,6 +528,7 @@
         console.log('-------------------------------------')
         console.log('validPago.value')
         console.log(validPago.value)
+        console.log(formPagos.value.validate())
         console.log('pago.value.importe_de_pago')
         console.log(pago.value.importe_de_pago)
         error_importe.value = null
@@ -676,7 +687,7 @@
         botonABM.value = 'Eliminar';     
         pago.value = item
         pago_id.value = pago.value.id   
-        deshabilitarEdicionCamposABMPagos.value = true       
+        deshabilitarEdicionCamposABMPagos.value = true     
     }
     if (accion == 'M' || accion == 'B') {
         
@@ -721,7 +732,7 @@
 
         }  
         
-        if (!pago.value.cheque.cuenta_emisora_id) {
+        if ((pago.value.tipo_de_cobro.id == 3 || pago.value.tipo_de_cobro.id == 4) && !pago.value.cheque.cuenta_emisora_id) {
             cheque_en_cartera.value = true
             cheque_id.value = pago.value.cheque.id
         }

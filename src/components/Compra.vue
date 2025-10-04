@@ -638,6 +638,13 @@
 
               <v-alert type="success" v-show="mensajeStore != null">{{ mensajeStore }}</v-alert>
 
+
+              <v-progress-circular
+              indeterminate
+              color="amber"
+              v-show="loading"
+              ></v-progress-circular>
+              
               <v-btn
                 class="ma-2"
                 color="primary"
@@ -697,12 +704,6 @@
               </v-dialog>
               <br>
               <br>
-
-              <v-progress-circular
-              indeterminate
-              color="amber"
-              v-show="loading"
-              ></v-progress-circular>
 
 
               <v-row v-if="compra_encabezado_id != -1">
@@ -1141,7 +1142,7 @@ let unidad_de_negocioRules = [
 
   //Envio el Formulario
   async function enviarFormEncabazado() {
-    //loading.value = true
+    loading.value = true
     if (compra_personal.value) {
       cuenta_de_origen_id.value = 21
       tipo_de_cobro_id.value = 1

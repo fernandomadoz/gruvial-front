@@ -25,6 +25,7 @@
                     <th class="text-left">Tipo Repuesto</th>
                     <th class="text-left">Nombre del repuesto</th>
                     <th class="text-left">Archivos</th>
+                    <th class="text-left">Notas</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -62,6 +63,7 @@
                             </a>
                         </span>
                     </td>
+                    <td>{{ item.notas }}</td>
                 </tr>
                 </tbody>
             </v-table>
@@ -100,7 +102,7 @@
                                     item-value="id"
                                     required="required"
                                     label="Tipo de Repuesto *"
-                                    rules="tipo_de_repuestoRules"
+                                    :rules="tipo_de_repuestoRules"
                                 ></v-select>     
                             </v-col>
                             <v-col cols="12" sm="6" md="6">
@@ -111,7 +113,7 @@
                                     required="required"
                                     maxlength="150"
                                     label="Nombre del Repuesto *"
-                                    rules="nombre_del_repuestoRules"
+                                    :rules="nombre_del_repuestoRules"
                                 ></v-text-field>
                             </v-col>
                             

@@ -147,7 +147,7 @@
                 </v-col>
 
                 
-                <v-col cols="12" sm="6" md="4" v-show="nuevoCliente && es_consumidor_final">
+                <v-col cols="12" sm="6" md="4" v-show="nuevoCliente">
                   <v-autocomplete
                     v-model="barrio_id"
                     :items="barrios"
@@ -155,7 +155,10 @@
                     item-value="id"
                     dense
                     filled
-                    label="Barrio"
+                    label="Barrio *"
+                    hint='Podes elegir "Otro" si no esta en la lista, o "Desconocido" si no sabes el barrio'
+                    persistent-hint
+                    :rules="barrio_idRules"
                   ></v-autocomplete> 
                 </v-col>
                 
@@ -560,6 +563,16 @@
         if (!value && !nuevoCliente.value) {
             console.log('Es requerido')
             return 'El Cliente es requerido'
+        }
+        return true
+      }
+  ]
+
+  let barrio_idRules = [
+      value => {
+        if (!value && nuevoCliente.value && tipo_de_cliente_id.value == 1) {
+            console.log('Es requerido')
+            return 'El Barrio es requerido (Podes elegir "Otro" si no esta en la lista, o "Desconocido" si no sabes el barrio)'
         }
         return true
       }

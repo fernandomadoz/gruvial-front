@@ -22,15 +22,17 @@
                 <tr>
                     <th class="text-left">Accion</th>
                     <th class="text-left">id</th>
-                    <th class="text-left">Tipo Preventivo</th>
-                    <th class="text-left">Prioridad</th>
-                    <th class="text-left">Nombre del preventivo</th>
+                    <th class="text-left">Responsable</th>
+                    <th class="text-left">Fecha</th>
+                    <th class="text-left">KMS</th>
+                    <th class="text-left">HS</th>
+                    <th class="text-left">Notas</th>
                     <th class="text-left">Archivos</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr
-                    v-for="item in listaPreventivos"
+                    v-for="item in listaRegistros"
                     :key="item.id"
                 >
                     <td>
@@ -49,12 +51,14 @@
                             v-bind="props"
                         ></v-btn>
                     </td>
-                    <td>{{ (item.id) }}</td>
-                    <td>{{ (item.tipo_de_preventivo.tipo_de_preventivo) }} </td>
-                    <td>{{ (item.prioridad.prioridad) }} </td>
-                    <td>{{ item.nombre_del_preventivo }}</td>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.persona.nombre }} {{ item.persona.apellido }} </td>
+                    <td>{{ item.fecha }}</td>
+                    <td>{{ item.kms }}</td>
+                    <td>{{ item.horas }}</td>
+                    <td>{{ item.notas }}</td>
                     <td>
-                        <span v-for="n in 5" :key="n" class="m-1">
+                        <span v-for="n in 10" :key="n" class="m-1">
                             <a :href="item['archivo_'+n]" target="_blank" v-if="item['archivo_'+n]">
                                 <v-btn
                                 class="pl-6"
@@ -73,7 +77,7 @@
         <v-card>
             <v-card-title>
                 <v-col cols="12" sm="11" md="11">
-                    <span class="text-h5">Preventivo</span>
+                    <span class="text-h5">Registro</span>
                 </v-col>
                 <v-col cols="1" sm="1" md="1">
                     <v-icon
@@ -88,92 +92,63 @@
                 <v-container>
                     
                     <v-form
-                        ref="formPreventivos"
-                        v-model="validPreventivo"
+                        ref="formRegistros"
+                        v-model="validRegistro"
                         lazy-validation
                     >
                         <v-row>
                             <v-col cols="12" sm="6" md="6">
                                 <v-select
-                                    v-model="preventivo.tipo_de_preventivo.id"
-                                    :items="tipos_de_preventivos"
-                                    :disabled="deshabilitarEdicionCamposABMPreventivos"
-                                    item-title="tipo_de_preventivo"
+                                    v-model="registro.persona.id"
+                                    :items="personas"
+                                    :disabled="deshabilitarEdicionCamposABMRegistros"
+                                    item-title="detalle_select"
                                     item-value="id"
                                     required="required"
-                                    label="Tipo de Preventivo *"
-                                    :rules="tipo_de_preventivoRules"
-                                ></v-select>     
-                            </v-col>
-
-                            <v-col cols="12" sm="6" md="6">
-                                <v-select
-                                    v-model="preventivo.prioridad.id"
-                                    :items="prioridades"
-                                    :disabled="deshabilitarEdicionCamposABMPreventivos"
-                                    item-title="prioridad"
-                                    item-value="id"
-                                    required="required"
-                                    label="Prioridad *"
+                                    label="Responsable *"
                                     :rules="requeridoRules"
                                     ></v-select>     
                             </v-col>
                             
-                            <v-col cols="12" sm="6" md="6">
+                            <v-col cols="12" sm="6" md="6" v-if="props.corresponde_registro_de_horas">
                                 <v-text-field
-                                    :disabled="deshabilitarEdicionCamposABMPreventivos"
-                                    v-model="preventivo.nombre_del_preventivo"
-                                    counter="150"
-                                    required="required"
-                                    maxlength="150"
-                                    label="Nombre del Preventivo *"
-                                    :rules="nombre_del_preventivoRules"
-                                ></v-text-field>
-                            </v-col>
-                            
-                        </v-row>
-                        <v-row>
-                            <v-col cols="12" sm="4" md="4" v-if="props.corresponde_registro_de_horas">
-                                <v-text-field
-                                    :disabled="deshabilitarEdicionCamposABMPreventivos"
-                                    v-model="preventivo.horas"
-                                    :rules="kmhsdiasRules"
-                                    label="Repetir cada (Horas del horometro)"
+                                    :disabled="deshabilitarEdicionCamposABMRegistros"
+                                    v-model="registro.horas"
+                                    :rules="requeridoRules"
+                                    label="Horas (horometro)"
                                     type="number"
                                     min="0"
                                     prefix="hs"
+                                    required="required"
                                 ></v-text-field> 
                             </v-col>
-                            
-                            <v-col cols="12" sm="4" md="4" v-if="props.corresponde_registro_de_kms">
+                            <v-col cols="12" sm="6" md="6" v-if="props.corresponde_registro_de_kms">
                                 <v-text-field
-                                    :disabled="deshabilitarEdicionCamposABMPreventivos"
-                                    v-model="preventivo.kms"
-                                    :rules="kmhsdiasRules"
-                                    label="Repetir cada (Kilometros)"
+                                    :disabled="deshabilitarEdicionCamposABMRegistros"
+                                    v-model="registro.kms"
+                                    :rules="requeridoRules"
+                                    label="Kilometros"
                                     type="number"
                                     min="0"
-                                    prefix="kms"
+                                    prefix="km"
+                                    required="required"
                                 ></v-text-field> 
                             </v-col>
-                            
-                            
-                            <v-col cols="12" sm="4" md="4">
+                                
+                            <v-col cols="12" sm="6" md="6">
                                 <v-text-field
-                                    :disabled="deshabilitarEdicionCamposABMPreventivos"
-                                    v-model="preventivo.dias"
-                                    :rules="kmhsdiasRules"
-                                    label="Repetir cada (Dias)"
-                                    type="number"
-                                    min="0"
-                                    prefix="dias"
-                                ></v-text-field> 
+                                    :disabled="deshabilitarEdicionCamposABMRegistros"
+                                    v-model="registro.fecha_f"
+                                    :rules="fechaRules"
+                                    label="Fecha de Registro *"
+                                    type="date"
+                                ></v-text-field>  
                             </v-col>
 
                             <!-- Arvhivo mostrar-->
-                            <v-col cols="12" sm="6" md="4" v-if="preventivo.archivo">                                
+                            <v-col cols="12" sm="6" md="4" v-if="registro.archivo">                                
                                 <div class="text-center">
-                                    <a :href="preventivo.archivo" target="_blank">
+                                    <a :href="registro.archivo" target="_blank">
                                     <v-btn
                                     prepend-icon="mdi-download"
                                     color="default"
@@ -188,10 +163,10 @@
                             <v-col cols="12" sm="12" md="12">
                                 <v-file-input
                                     v-if="accionABM == 'A'"
-                                    :disabled="deshabilitarEdicionCamposABMPreventivos"
+                                    :disabled="deshabilitarEdicionCamposABMRegistros"
                                     v-model="files"
                                     multiple 
-                                    label="Cargar o reemplazar archivo (Hasta 5 archivos y no puede superar los 20MB en total)"
+                                    label="Cargar o reemplazar archivo (Hasta 10 archivos y no puede superar los 20MB en total)"
                                     show-size
                                     counter 
                                     chips
@@ -200,8 +175,8 @@
                                 
                                 <div v-else>
                                     <h6 class="pb-3">Fotos o archivos:</h6>
-                                    <span v-for="n in 5" :key="n" class="m-1">
-                                    <a :href="preventivo['archivo_'+n]" target="_blank" v-if="preventivo['archivo_'+n]">
+                                    <span v-for="n in 10" :key="n" class="m-1">
+                                    <a :href="registro['archivo_'+n]" target="_blank" v-if="registro['archivo_'+n]">
                                         <v-btn
                                         class="pl-6"
                                         prepend-icon="mdi-download"
@@ -214,33 +189,9 @@
 
                             <v-col cols="12" sm="12" md="12">
                                 <v-textarea
-                                    :disabled="deshabilitarEdicionCamposABMPreventivos"
-                                    label="Repuestos e insumos necesarios"
-                                    v-model="preventivo.repuestos_e_insumos_necesarios"
-                                ></v-textarea>
-                            </v-col>
-
-                            <v-col cols="12" sm="12" md="12">
-                                <v-textarea
-                                    :disabled="deshabilitarEdicionCamposABMPreventivos"
-                                    label="Herramientas a utilizar"
-                                    v-model="preventivo.herramientas_a_utilizar"
-                                ></v-textarea>
-                            </v-col>
-
-                            <v-col cols="12" sm="12" md="12">
-                                <v-textarea
-                                    :disabled="deshabilitarEdicionCamposABMPreventivos"
-                                    label="Procedimiento a realizar"
-                                    v-model="preventivo.procedimiento_a_realizar"
-                                ></v-textarea>
-                            </v-col>
-
-                            <v-col cols="12" sm="12" md="12">
-                                <v-textarea
-                                    :disabled="deshabilitarEdicionCamposABMPreventivos"
+                                    :disabled="deshabilitarEdicionCamposABMRegistros"
                                     label="Notas"
-                                    v-model="preventivo.notas"
+                                    v-model="registro.notas"
                                 ></v-textarea>
                             </v-col>
                         </v-row>       
@@ -305,15 +256,15 @@
   const mensaje = ref(null);
   const loading = ref(false)
   let dialog = ref(false)
-  let preventivo = ref(null)
-  let preventivo_id = ref(null)
+  let registro = ref(null)
+  let registro_id = ref(null)
   let botonABM = ref(null)
-  let deshabilitarEdicionCamposABMPreventivos = ref(false)
+  let deshabilitarEdicionCamposABMRegistros = ref(false)
   let accionABM = ref(null)
   let remitos = ref([])
   //Variables maquinas_encabezados
-  const formPreventivos = ref(null) 
-  let fecha_de_vencimiento = ref(null)
+  const formRegistros = ref(null) 
+  
   const files = ref([])
 
 
@@ -336,50 +287,40 @@
       maquina_id: props.maquina_id
   });
 
-  //Traigo los Preventivos del Maquina
-  let body = await axios.post(ENDPOINT_PATH_API.value + "maquina-preventivo-listar", json, {headers: headersAxios.value[0]});
-  let listaPreventivos = ref(body['data']);
+  //Traigo los Registros del Maquina
+  let body = await axios.post(ENDPOINT_PATH_API.value + "maquina-registro-listar", json, {headers: headersAxios.value[0]});
+  let listaRegistros = ref(body['data']);
           
-  //Traigo tipos de preventivos
-  const body_tipos_de_preventivos = await axios.get(ENDPOINT_PATH_API.value + "tipo-de-preventivo", {headers: headersAxios.value[0]})
-  let tipos_de_preventivos = body_tipos_de_preventivos['data']
 
-
-  //Traigo prioridades
-  const body_prioridades = await axios.get(ENDPOINT_PATH_API.value + "prioridad", {headers: headersAxios.value[0]})
-  let prioridades = body_prioridades['data']
+  //Traigo personas
+  const body_personas = await axios.get(ENDPOINT_PATH_API.value + "persona", {headers: headersAxios.value[0]})
+  let personas = body_personas['data']
 
 
   // ----- Inicio: Validación y envio del Formulario Encabezado
 
   //Rules de los Campos
-  let validPreventivo = ref(true);
+  let validRegistro = ref(true);
   const requeridoRules = [
     v => !!v || 'Es requerido'
   ];
-  const fecha_de_vencimientoRules = [
-    //v => !!v || 'Es requerido'
+  const fechaRules = [
+    v => !!v || 'Es requerido'
   ];
   
-  const tipo_de_preventivoRules = [
-    v => !!v || 'Es requerido'
-  ];
-  const nombre_del_preventivoRules = [
-    v => !!v || 'Es requerido'
-  ];
+/*
+  const preventivos_de_maquinaRules = [
+    v => {
+        if (registro.value.tipo_de_registro.id == 1) {
+            return !!v || 'Es requerido'
+        }
+        return true
+    }
+];
+*/
 
-  const kmhsdiasRules = [
-      value => {
-          if (!value) {
-            if (!preventivo.value.horas && !preventivo.value.kms && !preventivo.value.dias) {
-                return 'Debes ndicar algun valor de repetición para que sea preventivo'
-            }
-          }
-          return true
-      }
-  ]
 
-  const maxFiles = 5 // Número máximo de archivos permitidos
+  const maxFiles = 10 // Número máximo de archivos permitidos
   const maxTotalSize = 20 * 1024 * 1024
 
   let filesRules = [
@@ -403,72 +344,66 @@
 
   //Valido el Formulario
   async function validate () {
-    await formPreventivos.value.validate()
-    if (validPreventivo.value || accionABM.value == 'B') {
-        enviarFormPreventivo()
+    await formRegistros.value.validate()
+    if (validRegistro.value || accionABM.value == 'B') {
+        enviarFormRegistro()
     }    
   }
 
   //Envio el Formulario
-  async function enviarFormPreventivo() {
+  async function enviarFormRegistro() {
 
     loading.value = true
 
     
     var formData = new FormData();
     
-    formData.append("preventivo_id", preventivo_id.value)
+    formData.append("registro_id", registro_id.value)
     formData.append("maquina_id", props.maquina_id)
-    formData.append("tipo_de_preventivo_id", preventivo.value.tipo_de_preventivo.id)
-    formData.append("prioridad_id", preventivo.value.prioridad.id)
-    formData.append("nombre_del_preventivo", preventivo.value.nombre_del_preventivo)
-    formData.append("kms", preventivo.value.kms)
-    formData.append("horas", preventivo.value.horas)
-    formData.append("dias", preventivo.value.dias)
-    formData.append("repuestos_e_insumos_necesarios", preventivo.value.repuestos_e_insumos_necesarios)
-    formData.append("herramientas_a_utilizar", preventivo.value.herramientas_a_utilizar)
-    formData.append("procedimiento_a_realizar", preventivo.value.procedimiento_a_realizar)
-    formData.append("notas", preventivo.value.notas)
+    formData.append("persona_id", registro.value.persona.id)
+    formData.append("fecha", registro.value.fecha_f)
+    formData.append("notas", registro.value.notas)
+    formData.append("horas", registro.value.horas)
+    formData.append("kms", registro.value.kms)
 
-    //formData.append("archivo_new", archivo_new.value[0]);
     if (files.value) {
         files.value.forEach((value, key) => formData.append("archivo_new_"+(key+1), value));
     }
-    
+
     //construjo el json a enviar a laravel
     json = JSON.stringify({ 
       maquina_id: props.maquina_id,
-      tipo_de_preventivo_id: preventivo.value.tipo_de_preventivo.id,
-      nombre_del_preventivo: preventivo.value.nombre_del_preventivo,
+      nro_de_registro: registro.value.nro_de_registro,
+      fecha: registro.value.fecha_f,
       //archivo_new: archivo_new.value
     });
     
-    //Si preventivo_id = -1 creo la linea de maquina sino actualizo
+    //Si registro_id = -1 creo la linea de maquina sino actualizo
     let body_abm = ''
 
     if (accionABM.value == 'A') {
-      body_abm = await axios.post(ENDPOINT_PATH_API.value + "preventivo-de-maquina-create", formData, {headers: headersAxiosFiles.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "registro-de-maquina-create", formData, {headers: headersAxiosFiles.value[0]})
     }
 
     if (accionABM.value == 'M') {
-      body_abm = await axios.post(ENDPOINT_PATH_API.value + "preventivo-de-maquina-update/"+preventivo_id.value, formData, {headers: headersAxiosFiles.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "registro-de-maquina-update/"+registro_id.value, formData, {headers: headersAxiosFiles.value[0]})
     }  
     
     if (accionABM.value == 'B') {
-      //body_abm = await axios.delete(ENDPOINT_PATH_API.value + "preventivo/"+preventivo_id.value, json, {headers: headersAxios.value[0]})
-      body_abm = await axios.post(ENDPOINT_PATH_API.value + "preventivo-de-maquina-delete/"+preventivo_id.value, json, {headers: headersAxios.value[0]})
+      //body_abm = await axios.delete(ENDPOINT_PATH_API.value + "registro/"+registro_id.value, json, {headers: headersAxios.value[0]})
+      body_abm = await axios.post(ENDPOINT_PATH_API.value + "registro-de-maquina-delete/"+registro_id.value, formData, {headers: headersAxios.value[0]})
     }      
     mensaje.value = body_abm['data'].mensaje
 
-    //Traigo las preventivos
+    //Traigo las registros
     json = JSON.stringify({ 
         maquina_id: props.maquina_id
     });
     dialog.value = false
 
     
-    body = await axios.post(ENDPOINT_PATH_API.value + "maquina-preventivo-listar", json, {headers: headersAxios.value[0]})
-    listaPreventivos.value = body['data'];
+    body = await axios.post(ENDPOINT_PATH_API.value + "maquina-registro-listar", json, {headers: headersAxios.value[0]})
+    listaRegistros.value = body['data'];
 
     getTime()
     loading.value = false
@@ -477,44 +412,43 @@
   function ABMLinea(accion, item) {
     accionABM.value = accion
     if (accion == 'A') {
-        preventivo_id.value = -1
-        preventivo.value = {
+        registro_id.value = -1
+        registro.value = {
 
             maquina_id: props.maquina_id,
-            tipo_de_preventivo: {
+            persona: {
                 id: null
             },
-            prioridad: {
-                id: null
-            },
-            nombre_del_preventivo: null,
+            fecha: null,
             kms: null,
-            dias: null,
             horas: null,
-            repuestos_e_insumos_necesarios: null,
-            herramientas_a_utilizar: null,
-            procedimiento_a_realizar: null,
             notas: null,
 
         }
         files.value = null
         
         botonABM.value = 'Insertar';
-        deshabilitarEdicionCamposABMPreventivos.value = false    
+        deshabilitarEdicionCamposABMRegistros.value = false    
         
     }
     if (accion == 'M') {
         botonABM.value = 'Modificar';
-        preventivo.value = item
+        registro.value = item
+
+        if (!registro.value.preventivo_de_maquina_id) {
+            registro.value.preventivo_de_maquina = {
+                id: null
+            }
+        }
         
-        preventivo_id.value = preventivo.value.id        
-        deshabilitarEdicionCamposABMPreventivos.value = false       
+        registro_id.value = registro.value.id        
+        deshabilitarEdicionCamposABMRegistros.value = false       
     }
     if (accion == 'B') {
             botonABM.value = 'Eliminar';     
-            preventivo.value = item
-            preventivo_id.value = preventivo.value.id   
-            deshabilitarEdicionCamposABMPreventivos.value = true       
+            registro.value = item
+            registro_id.value = registro.value.id   
+            deshabilitarEdicionCamposABMRegistros.value = true       
     }
   }
 

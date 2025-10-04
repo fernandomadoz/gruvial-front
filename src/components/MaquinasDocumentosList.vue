@@ -100,7 +100,7 @@
                                     v-model="documento.tipo_de_documento_de_maquina.id"
                                     :items="tipos_de_documentos"
                                     :disabled="deshabilitarEdicionCamposABMDocumentos"
-                                    item-title="tipo_de_documento *"
+                                    item-title="tipo_de_documento"
                                     item-value="id"
                                     required="required"
                                     label="Tipo de Documento *"

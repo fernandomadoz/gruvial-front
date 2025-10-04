@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import TrabajosView from '../views/TrabajosView.vue';
 import TrabajoView from '../views/TrabajoView.vue';
+import TareasView from '../views/TareasView.vue';
+import TareaView from '../views/TareaView.vue';
 import MaquinasView from '../views/MaquinasView.vue';
 import MaquinaView from '../views/MaquinaView.vue';
 import MaquinaInfoView from '../views/MaquinaInfoView.vue';
@@ -84,6 +86,13 @@ const router = createRouter({
 
     },
     { 
+      path: "/tarea/:accion/:tarea_id", 
+      name: 'Tarea',
+      component: TareaView,
+      props: true
+
+    },
+    { 
       path: "/cliente/:accion/:cliente_id", 
       name: 'Cliente',
       component: ClienteView,
@@ -151,6 +160,12 @@ const router = createRouter({
       path: "/cheques-list/:cod_mensaje?", 
       name: 'ChequesList',
       component: ChequesView,
+      props: true
+    },  
+    { 
+      path: "/tareas-list/:cod_mensaje?", 
+      name: 'TareasList',
+      component: TareasView,
       props: true
     },  
     { 

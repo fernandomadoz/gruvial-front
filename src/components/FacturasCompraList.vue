@@ -91,9 +91,15 @@
       Facturas Compra {{ getFirma?.firma }}     
     </v-toolbar-title>
     
-
-    <!--v-btn icon="mdi-magnify"></v-btn-->
-
+    <v-spacer></v-spacer>
+    
+    <v-btn
+      prepend-icon="mdi-microsoft-excel"
+      color="success"
+      @click="exportarAExcel"
+    >
+      Exportar a Excel
+    </v-btn>
   </v-toolbar>
 
     <v-alert v-if="error" type="error">{{ mensajeError }}</v-alert>
@@ -271,6 +277,7 @@
 <script setup>
 import { ref, watch, onMounted } from "vue";
 import axios from "axios";
+import * as XLSX from 'xlsx';
 import { useData } from '../composables/useData';
 import router from "@/router";
 import { orderBy } from "lodash";
@@ -483,16 +490,57 @@ const convertir = (valor) => {
   )  
   
   function formatoNumero(numero) {
-      let decimal = {useGrouping: false }
-      let moneda = { style: "currency", minimumFractionDigits: 2, maximumFractionDigits: 2 }
-      //return Number(numero).toLocaleString("ARS", decimal)
-      return Number(numero).toLocaleString("es-AR", 'ARS')
-
+      return Number(numero).toLocaleString("es-AR", { 
+        minimumFractionDigits: 2, 
+        maximumFractionDigits: 2,
+        useGrouping: true
+      })
   }
 
-  
-  
-  
+  // Función para exportar a Excel
+  const exportarAExcel = () => {
+    // Preparar los datos para Excel
+    const datosParaExcel = listaFacturas.value.map(item => ({
+      'ID': item.id,
+      'Fecha': item.fecha_de_factura_f,
+      'Razón Social': item.razon_social.razon_social,
+      'Tipo de Factura': item.tipo_de_factura.tipo_de_factura,
+      'Nro. Factura': item.nro_de_factura,
+      'Descripción': item.descripcion,
+      'Proveedor': item.compra_encabezado?.proveedor?.nombre_o_razon_social,
+      'IVA': Number(item.importe_iva || 0),
+      'Importe Total': Number(item.importe_total || 0)
+    }));
+
+    // Crear libro de trabajo y hoja
+    const ws = XLSX.utils.json_to_sheet(datosParaExcel);
+
+    // Aplicar formato de número con 2 decimales a las columnas numéricas
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    
+    // Encontrar las columnas de IVA e Importe Total
+    const headers = Object.keys(datosParaExcel[0]);
+    const ivaCol = headers.indexOf('IVA');
+    const totalCol = headers.indexOf('Importe Total');
+
+    // Aplicar formato solo si encontramos las columnas
+    if (ivaCol !== -1 && totalCol !== -1) {
+      for (let row = range.s.r + 1; row <= range.e.r; row++) {
+        const ivaCell = XLSX.utils.encode_cell({ r: row, c: ivaCol });
+        const totalCell = XLSX.utils.encode_cell({ r: row, c: totalCol });
+        
+        if (ws[ivaCell]) ws[ivaCell].z = '#,##0.00';
+        if (ws[totalCell]) ws[totalCell].z = '#,##0.00';
+      }
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Facturas");
+
+    // Generar el archivo
+    XLSX.writeFile(wb, `Facturas_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   function classFactura(item) {
       let clase = 'nopagado'
       if (item.factura_saldada || item.es_nota_de_credito) {

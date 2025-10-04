@@ -85,7 +85,9 @@ export const useDataStore = defineStore("DataStore", {
                     'clientes', 
                     'proveedores',
                     'maquinas', 
+                    'tareas', 
                     'reportes', 
+                    'cambiar-firma',
                     'cambiar-contraseña',
                 ]
             }
@@ -140,6 +142,7 @@ export const useDataStore = defineStore("DataStore", {
                 {title: 'Relaciones', link: '/relaciones-list', icon: 'mdi-cached', showInHome: true},
                 {title: 'Recordatorios', link: '/recordatorios-list', icon: 'mdi-calendar-clock', showInHome: true},
                 {title: 'Maquinas', link: '/maquinas-list', icon: 'mdi-tow-truck', showInHome: false},
+                {title: 'Tareas', link: '/tareas-list', icon: 'mdi-calendar-check', showInHome: false},
                 {title: 'Clientes', link: '/clientes-list', icon: 'mdi-account-group', showInHome: false},
                 {title: 'Proveedores', link: '/proveedores-list', icon: 'mdi-briefcase-account', showInHome: false},
                 {title: 'Cambiar Firma', link: '/', icon: 'mdi-office-building', showInHome: false},
@@ -161,6 +164,7 @@ export const useDataStore = defineStore("DataStore", {
                 'maquinas', 
                 'clientes', 
                 'proveedores', 
+                'tareas', 
                 'cambiar-firma', 
                 'cambiar-contraseña', 
                 'reportes', 

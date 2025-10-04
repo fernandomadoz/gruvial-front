@@ -75,7 +75,10 @@
                     item-value="id"
                     dense
                     filled
-                    label="Barrio"
+                    label="Barrio *"
+                    :rules="barrio_idRules"
+                    hint='Podes elegir "Otro" si no esta en la lista, o "Desconocido" si no sabes el barrio'
+                    persistent-hint
                   ></v-autocomplete> 
                 </v-col>
                 
@@ -282,7 +285,7 @@ console.log(cliente_id.value)
    
   let cuit_o_cuilRules = [
       value => {
-            if (!value) {
+            if (!value && !es_consumidor_final.value) {
                 return 'CUIT es requerido'
             }
             if (value && (value.length != 11)) {
@@ -299,6 +302,17 @@ console.log(cliente_id.value)
   const tipo_de_cliente_idRules =  [
     v => !!v || 'Es requerido',
   ];
+
+  
+  let barrio_idRules = [
+      value => {
+        if (!value && tipo_de_cliente_id.value == 1) {
+            console.log('Es requerido')
+            return 'El Barrio es requerido (Podes elegir "Otro" si no esta en la lista, o "Desconocido" si no sabes el barrio)'
+        }
+        return true
+      }
+  ]
 
 
 

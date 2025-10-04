@@ -11,9 +11,10 @@
         <v-tab value="Encabezado">Encabezado</v-tab>
         <v-tab value="Documentos" v-if="maquina_id!=-1">Documentos</v-tab>
         <v-tab value="Repuestos" v-if="maquina_id!=-1">Repuestos</v-tab>
-        <v-tab value="Mantenimientos" v-if="maquina_id!=-1">Mantenimientos</v-tab>
+        <v-tab value="Mantenimientos" v-if="maquina_id!=-1">Mantenimientos (Registros)</v-tab>
         <v-tab value="Combustible" v-if="maquina_id!=-1">Combustible</v-tab>
-        <v-tab value="Preventivos" v-if="maquina_id!=-1">Preventivos</v-tab>
+        <v-tab value="Preventivos" v-if="maquina_id!=-1">Reglas (Preventivos)</v-tab>
+        <v-tab value="Registros" v-if="maquina_id!=-1">Registros</v-tab>
       </v-tabs>
 
       <v-card-text>
@@ -52,7 +53,9 @@
                     label="Tipo de Cliente *"
                   ></v-autocomplete> 
                 </v-col>
+            </v-row>
 
+              <v-row>
 
                 <v-col cols="12" sm="6" md="4">
                   <v-switch
@@ -60,6 +63,24 @@
                     :true-value="1"
                     :false-value="0"
                     label="Activa?"
+                    color="success"
+                  ></v-switch>
+                </v-col>
+                <v-col cols="12" sm="6" md="4">
+                  <v-switch
+                    v-model="corresponde_registro_de_horas"
+                    :true-value="1"
+                    :false-value="0"
+                    label="Corresponde registro de horas?"
+                    color="success"
+                  ></v-switch>
+                </v-col>
+                <v-col cols="12" sm="6" md="4">
+                  <v-switch
+                    v-model="corresponde_registro_de_kms"
+                    :true-value="1"
+                    :false-value="0"
+                    label="Corresponde registro de kms?"
                     color="success"
                   ></v-switch>
                 </v-col>
@@ -126,7 +147,7 @@
           </v-window-item>
 
           <v-window-item value="Mantenimientos" v-if="maquina_id!=-1">
-            <MaquinasMantenimientosList :maquina_id="props.maquina_id" />            
+            <MaquinasMantenimientosList :maquina_id="props.maquina_id" :corresponde_registro_de_horas="corresponde_registro_de_horas" :corresponde_registro_de_kms="corresponde_registro_de_kms" />            
           </v-window-item>
 
           <v-window-item value="Combustible" v-if="maquina_id!=-1">
@@ -135,7 +156,11 @@
 
 
           <v-window-item value="Preventivos" v-if="maquina_id!=-1">
-            <MaquinasPreventivosList :maquina_id="props.maquina_id" />            
+            <MaquinasPreventivosList :maquina_id="props.maquina_id" :corresponde_registro_de_horas="corresponde_registro_de_horas" :corresponde_registro_de_kms="corresponde_registro_de_kms" />            
+          </v-window-item>
+
+          <v-window-item value="Registros" v-if="maquina_id!=-1">
+            <MaquinasRegistrosList :maquina_id="props.maquina_id" :corresponde_registro_de_horas="corresponde_registro_de_horas" :corresponde_registro_de_kms="corresponde_registro_de_kms" />            
           </v-window-item>
 
 
@@ -166,6 +191,8 @@
   import MaquinasMantenimientosList from '../components/MaquinasMantenimientosList.vue';
   import MaquinasFluidosList from '../components/MaquinasFluidosList.vue';
   import MaquinasPreventivosList from '../components/MaquinasPreventivosList.vue';
+  import MaquinasRegistrosList from '../components/MaquinasRegistrosList.vue';
+  
   
 
   const props = defineProps({
@@ -190,7 +217,7 @@
   const hasError = ref(false)
 
   //Traigo firmas
-  const body_firmas = await axios.get(ENDPOINT_PATH_API.value + "firma-por-usuario", {headers: headersAxios.value[0]})
+  const body_firmas = await axios.get(ENDPOINT_PATH_API.value + "firma", {headers: headersAxios.value[0]})
   let firmas2 = body_firmas['data']
 
   //Traigo Tipos de Maquinas
@@ -204,6 +231,8 @@
   let nombre_de_maquina = ref(null)
   let tipo_de_maquina_id = ref(null)
   let sino_activa = ref(0)
+  let corresponde_registro_de_horas = ref(0)
+  let corresponde_registro_de_kms = ref(0)
   const accionPosterior = ref(null)
 
   if (props.maquina_id == -1) {
@@ -222,6 +251,8 @@
     nombre_de_maquina.value = maquina.data.nombre_de_maquina
     tipo_de_maquina_id.value = maquina.data.tipo_de_maquina_id
     sino_activa.value = maquina.data.sino_activa
+    corresponde_registro_de_horas.value = maquina.data.corresponde_registro_de_horas
+    corresponde_registro_de_kms.value = maquina.data.corresponde_registro_de_kms
 
   }
 
@@ -284,6 +315,8 @@
       maquina_id: props.maquina_id,
       firma_id: firma_id_maquina.value,
       sino_activa: sino_activa.value,
+      corresponde_registro_de_horas: corresponde_registro_de_horas.value,
+      corresponde_registro_de_kms: corresponde_registro_de_kms.value,
       nombre_de_maquina: nombre_de_maquina.value,
       codigo: codigo.value,
       tipo_de_maquina_id: tipo_de_maquina_id.value,
@@ -320,8 +353,6 @@
     }    
 
     if (!hasError.value) {
-      //Traigo clientes
-      sino_activa.value = false
       getTime()
     }
 

@@ -227,6 +227,19 @@
                                         ></v-textarea>
                                     </v-col>
                                 </v-row>
+                                
+                                <v-row>
+                                    <v-col cols="12" sm="12" md="12">
+                                      <v-select
+                                        v-model="item.origen_de_leed_id"
+                                        :items="origenes"
+                                        item-title="origen"
+                                        item-value="id"
+                                        label="Como nos conoció?"
+                                      ></v-select>
+                                    </v-col>
+                                </v-row>
+                                    
                                 </v-card-text>
 
                                 <v-card-actions>
@@ -322,6 +335,10 @@
   })
 
 
+  //Traigo Origenes
+  let body_origenes = await axios.get(ENDPOINT_PATH_API.value + "origen-de-leed", {headers: headersAxios.value[0]})
+  let origenes = ref(body_origenes['data'])
+  
   //Traigo CUENTAS
   let body_razones_sociales = await axios.get(ENDPOINT_PATH_API.value + "razon-social", {headers: headersAxios.value[0]})
   let razones_sociales = ref(body_razones_sociales['data'])
@@ -464,7 +481,9 @@
             estado_de_cotizacion_id: item.estado_de_cotizacion_id,
             motivo_de_rechazo_de_cotizacion_id: item.motivo_de_rechazo_de_cotizacion_id,
             observaciones_de_estado: item.observaciones_de_estado,
-            generarServicios: generarServicios.value
+            origen_de_leed_id: item.origen_de_leed_id,
+            generarServicios: generarServicios.value,
+            
 
         });
         let body_aprobar = await axios.post(ENDPOINT_PATH_API.value + "modificar-estado-cotizacion", jsonModificar, {headers: headersAxios.value[0]})
